@@ -1,17 +1,19 @@
-#Rentee Backend
+# Rentee Backend
 
-##To run the project: 
+## To run the project: 
 
-* create .env file and add these env variables: 
-    -DB=reminder
-    -DB_USER_NAME=root
-    -DB_PASSWORD=root
-* Run "yarn" in cmd (to install all dependencies)
-* Run "yarn dev" to run the development server
-* Run "yarn build" to build the project before committing any changes"
-* Run "yarn prettier:fix" to fix if build fails due to any code-style issues.
+* create *.env* file and add these env variables: 
+    - `DB=reminder`
+    - `DB_USER_NAME=root`
+    - `DB_PASSWORD=root`
+* Run **yarn** in cmd (to install all dependencies).
+* Run **yarn dev** to run the development server.
+* Run **yarn build** to build the project before committing any changes.
+* Run **yarn prettier:fix** to fix if build fails due to any code-style issues.
 
-##Development flow:
+---
+
+## Development flow:
 
 1. Make changes in the required files
 2. git add <only those files which are changed>

@@ -10,11 +10,6 @@
     "noImplicitAny": true,                           
     "esModuleInterop": true,                        
     "resolveJsonModule": true,                      
-    "skipLibCheck": true,                           
-    //"forceConsistentCasingInFileNames": true         
+    "skipLibCheck": true,        
   }
-  // "files": [
-  //   "\\",
-  //   "\\"
-  // ]
 }

@@ -14,4 +14,6 @@ router.get("/login", authController.login);
 
 router.get("/details", authController.verifyUser);
 
+router.get("/refresh-token", authController.verifyRefreshToken);
+
 export default router;

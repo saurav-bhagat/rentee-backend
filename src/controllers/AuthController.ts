@@ -1,5 +1,6 @@
-import {sign, verify} from "jsonwebtoken";
 import {Request, Response} from "express";
+import signAccessToken from "../helper/jwt_helper";
+import signRefreshToken from "../helper/jwt_helper";
 
 export interface UserPayload {
     user?: {
@@ -7,11 +8,11 @@ export interface UserPayload {
         username: string;
         email: string;
     };
-    iat?: number;
+    iat?: number; //
 }
 
 export class AuthController {
-    login = (req: Request, res: Response) => {
+    login = async (req: Request, res: Response) => {
         //userdata will come from client
         const userData: UserPayload = {
             user: {
@@ -21,22 +22,40 @@ export class AuthController {
             },
         };
         let user = userData.user;
-        sign({user}, process.env.JWT_SECRET as string, (err: any, token: any) => {
-            res.json({
-                token,
-            });
+        const accessToken = await signAccessToken(user, process.env.JWT_ACCESS_SECRET, "10s");
+        const refreshToken = await signRefreshToken(user, process.env.JWT_REFRESH_SECRET, "1d");
+
+        // Todo: store refreshtokens in db
+
+        res.json({
+            accessToken: accessToken,
+            refreshToken: refreshToken,
         });
     };
 
     verifyUser = (req: any, res: any) => {
         if (req.user) {
-            console.log(req.user);
+            //console.log(req.user);
             res.json({
                 message: "From authcontroller verifyUser",
                 userData: req.user,
             });
         } else {
-            res.status(403);
+            res.status(403).json({err: "user not found"});
+        }
+    };
+
+    verifyRefreshToken = async (req: any, res: any) => {
+        if (req.user) {
+            const user = req.user;
+            const accessToken = await signAccessToken(user, process.env.JWT_ACCESS_SECRET, "40s");
+            const refreshToken = await signRefreshToken(user, process.env.JWT_REFRESH_SECRET, "1d");
+            res.json({
+                accessToken: accessToken,
+                refreshToken: refreshToken,
+            });
+        } else {
+            res.status(403).json({err: "user not found"});
         }
     };
 }

@@ -10,8 +10,6 @@ const authController: AuthController = new AuthController();
 //endpoints for owner
 router.get("/ping", ownerController.pong);
 
-router.get("/login", authController.login);
-
 router.get("/details", authController.verifyUser);
 
 export default router;

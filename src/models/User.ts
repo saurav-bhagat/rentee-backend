@@ -1,14 +1,9 @@
-import {Schema, model} from "mongoose";
-import isEmail from "validator/lib/isEmail";
+import {Schema, model, Document, Model} from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
+import uniqueValidator from "mongoose-unique-validator";
 
 const userSchema = new Schema({
-    username: {
-        type: String,
-        require: [true, "Please enter username"],
-        unique: true,
-    },
     name: {
         type: String,
         required: [true, "Please enter your name"],
@@ -16,9 +11,9 @@ const userSchema = new Schema({
     email: {
         type: String,
         required: [true, "Please enter an email"],
-        unique: true,
+        unique: [true, "email is already registered"],
         lowercase: true,
-        validate: [isEmail, "Please enter an valid email"],
+        validate: [validator.isEmail, "Please enter an valid email"],
     },
     password: {
         type: String,
@@ -29,6 +24,7 @@ const userSchema = new Schema({
         type: String,
         required: [true, "Please enter  phone number"],
         validate: [validator.isMobilePhone, "Please enter an valid phone number"],
+        unique: [true, "Phone number is already registered"],
     },
     isOwner: {
         type: Boolean,
@@ -57,6 +53,30 @@ userSchema.statics.login = async function (email: string, password: string) {
     }
 };
 
-const User = model("user", userSchema);
+interface basicUserDocument extends Document {
+    name: {
+        type: String;
+    };
+    email: {
+        type: String;
+    };
+    password: {
+        type: String;
+    };
+    phoneNumber: {
+        type: String;
+    };
+    isOwner: {
+        type: Boolean;
+    };
+}
+
+interface basicUserModel extends Model<basicUserDocument> {
+    login: (email: string, password: string) => object;
+}
+
+const User = model<basicUserDocument, basicUserModel>("user", userSchema);
+
+userSchema.plugin(uniqueValidator);
 
 export default User;

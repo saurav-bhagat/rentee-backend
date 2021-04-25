@@ -1,5 +1,7 @@
 import {Request, Response} from "express";
-import getJwtToken, {verifyRefreshToken} from "../helper/jwt_helper";
+import getJwtToken, {verifyRefreshToken} from "../utils/token";
+import User from "../models/User";
+import handleAuthError from "../utils/auth-error-handler";
 
 export interface UserPayload {
     user?: {
@@ -11,36 +13,39 @@ export interface UserPayload {
 }
 
 export class AuthController {
-    login = async (req: Request, res: Response) => {
-        //userdata will come from client
-        const userData: UserPayload = {
-            user: {
-                id: 1,
-                username: "saurav",
-                email: "saurav@gmail.com",
-            },
-        };
-        let user = userData.user;
-        const accessToken = await getJwtToken(user, process.env.JWT_ACCESS_SECRET as string, "10s");
-        const refreshToken = await getJwtToken(user, process.env.JWT_REFRESH_SECRET as string, "1d");
-
-        // Todo: store refreshtokens in db
-
-        res.json({
-            accessToken: accessToken,
-            refreshToken: refreshToken,
-        });
+    signUp = async (req: Request, res: Response) => {
+        const {name, email, password, phoneNumber} = req.body;
+        try {
+            const user = await User.create({name, email, password, phoneNumber});
+            console.log(user);
+            res.json(user);
+        } catch (error) {
+            console.log(error);
+            const err = handleAuthError(error);
+            // @ts-ignore
+            res.json({err});
+        }
     };
+    // for login purposes
+    authenticate = async (req: Request, res: Response) => {
+        const {email, password} = req.body;
+        try {
+            const user = await User.login(email, password);
+            // let user = userData.user;
 
-    verifyUser = (req: any, res: any) => {
-        if (req.user) {
-            //console.log(req.user);
+            const accessToken = await getJwtToken(user, process.env.JWT_ACCESS_SECRET as string, "10s");
+            const refreshToken = await getJwtToken(user, process.env.JWT_REFRESH_SECRET as string, "1d");
+            // Todo: store refreshtokens in db
+
             res.json({
-                message: "From authcontroller verifyUser",
-                userData: req.user,
+                accessToken: accessToken,
+                refreshToken: refreshToken,
             });
-        } else {
-            res.status(403).json({err: "user not found"});
+        } catch (error) {
+            console.log(error);
+            const err = handleAuthError(error);
+            // @ts-ignore
+            res.json({err});
         }
     };
 

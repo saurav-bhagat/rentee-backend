@@ -11,7 +11,7 @@ const userSchema = new Schema({
     email: {
         type: String,
         required: [true, "Please enter an email"],
-        unique: [true, "email is already registered"],
+        unique: [true, "Email is already registered"],
         lowercase: true,
         validate: [validator.isEmail, "Please enter an valid email"],
     },
@@ -22,7 +22,7 @@ const userSchema = new Schema({
     },
     phoneNumber: {
         type: String,
-        required: [true, "Please enter  phone number"],
+        required: [true, "Please enter phone number"],
         validate: [validator.isMobilePhone, "Please enter an valid phone number"],
         unique: [true, "Phone number is already registered"],
     },
@@ -47,9 +47,9 @@ userSchema.statics.login = async function (email: string, password: string) {
         if (auth) {
             return user;
         }
-        throw Error("incorrect password");
+        throw Error("Incorrect password");
     } else {
-        throw Error("incorrect email");
+        throw Error("Incorrect email");
     }
 };
 

@@ -1,7 +1,7 @@
 import {Request, Response} from "express";
 import getJwtToken, {verifyRefreshToken} from "../utils/token";
 import User from "../models/User";
-import handleAuthError from "../utils/auth-error-handler";
+import handleAuthError from "../utils/authErrorHandler";
 
 export interface UserPayload {
     user?: {
@@ -9,43 +9,45 @@ export interface UserPayload {
         username: string;
         email: string;
     };
-    iat?: number; //
+    iat?: number;
 }
 
 export class AuthController {
     signUp = async (req: Request, res: Response) => {
         const {name, email, password, phoneNumber} = req.body;
+        const userData = {name, email, password, phoneNumber};
+
         try {
-            const user = await User.create({name, email, password, phoneNumber});
+            const user = await User.create(userData);
             console.log(user);
-            res.json(user);
+            res.status(200).json(user);
         } catch (error) {
             console.log(error);
-            const err = handleAuthError(error);
-            // @ts-ignore
-            res.json({err});
+            res.status(400).json({err: handleAuthError(error)});
         }
     };
+
     // for login purposes
     authenticate = async (req: Request, res: Response) => {
         const {email, password} = req.body;
+        if (!email || !password) res.status(400).json({err: "Invalid Email/Password"});
+
         try {
+            //will verify user password
             const user = await User.login(email, password);
-            // let user = userData.user;
 
             const accessToken = await getJwtToken(user, process.env.JWT_ACCESS_SECRET as string, "10s");
             const refreshToken = await getJwtToken(user, process.env.JWT_REFRESH_SECRET as string, "1d");
             // Todo: store refreshtokens in db
 
-            res.json({
+            res.status(200).json({
+                user,
                 accessToken: accessToken,
                 refreshToken: refreshToken,
             });
-        } catch (error) {
+        } catch (error: any) {
             console.log(error);
-            const err = handleAuthError(error);
-            // @ts-ignore
-            res.json({err});
+            res.status(400).json({err: handleAuthError(error)});
         }
     };
 
@@ -67,12 +69,13 @@ export class AuthController {
             //Todo :
             // after verifying and generating token we need to store new refreshToken corresponds to user in db
 
-            res.json({
+            res.status(200).json({
+                user,
                 accessToken: accessToken,
                 refreshToken: newRefreshToken,
             });
-        } catch (err) {
-            res.json({err});
+        } catch (error) {
+            res.status(400).json({err: error.message});
         }
     };
 }

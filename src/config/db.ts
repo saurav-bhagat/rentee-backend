@@ -5,13 +5,11 @@ export default async () => {
         .connect(process.env.DATABASE_URI as string, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            //  useCreateIndex: true,
-            //  useFindAndModify: false
         })
         .then(() => {
-            console.log("db Connection is successfull on port");
+            console.log("Db Connection successful");
         })
         .catch((err) => {
-            console.log("failed to connect to db", err);
+            console.log("Failed to connect to db: ", err);
         });
 };

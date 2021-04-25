@@ -24,7 +24,7 @@ const createToken = (userId: any, jwtSecret: string, expireTime: string) => {
 export const verifyRefreshToken = (refreshToken: string) => {
     return new Promise((resolve, reject) => {
         verify(refreshToken, process.env.JWT_REFRESH_SECRET as string, (err, payload) => {
-            if (err) return reject("err while  authorization");
+            if (err) return reject("Authorization Error");
             resolve(payload);
         });
     });

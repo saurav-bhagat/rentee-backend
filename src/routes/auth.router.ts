@@ -8,6 +8,8 @@ const authController: AuthController = new AuthController();
 //endpoints for auth
 router.post("/refresh-token", authController.handleRefreshToken);
 
-router.get("/login", authController.login);
+router.post("/signup", authController.signUp);
+
+router.post("/login", authController.authenticate);
 
 export default router;

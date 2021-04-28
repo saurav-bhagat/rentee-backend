@@ -1,6 +1,7 @@
 import {sign, verify} from "jsonwebtoken";
+import { UserPayload } from "../controllers/AuthController";
 
-const createToken = (userId: any, jwtSecret: string, expireTime: string) => {
+const createToken = (userId: any, jwtSecret: string, expireTime: string): Promise<string> => {
     return new Promise((resolve, reject) => {
         const payload = {
             user: userId,
@@ -16,16 +17,17 @@ const createToken = (userId: any, jwtSecret: string, expireTime: string) => {
                 reject(err);
                 return;
             }
-            resolve(token);
+            //we use ! as we know at this line token can't be null
+            resolve(token!);
         });
     });
 };
 
-export const verifyRefreshToken = (refreshToken: string) => {
+export const verifyRefreshToken = (refreshToken: string, secret: string): Promise<UserPayload> => {
     return new Promise((resolve, reject) => {
-        verify(refreshToken, process.env.JWT_REFRESH_SECRET as string, (err, payload) => {
+        verify(refreshToken, secret, (err, payload) => {
             if (err) return reject("Authorization Error");
-            resolve(payload);
+            resolve(<UserPayload>payload);
         });
     });
 };

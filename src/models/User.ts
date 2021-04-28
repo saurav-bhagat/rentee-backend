@@ -3,33 +3,40 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import uniqueValidator from "mongoose-unique-validator";
 
-const userSchema = new Schema({
-    name: {
-        type: String,
-        required: [true, "Please enter your name"],
+const userSchema = new Schema(
+    {
+        name: {
+            type: String,
+            required: [true, "Please enter your name"],
+        },
+        email: {
+            type: String,
+            required: [true, "Please enter an email"],
+            unique: [true, "Email is already registered"],
+            lowercase: true,
+            validate: [validator.isEmail, "Please enter an valid email"],
+        },
+        password: {
+            type: String,
+            required: [true, "Please enter a password"],
+            minlength: [6, "Minimum password length is 6 characters"],
+        },
+        phoneNumber: {
+            type: String,
+            required: [true, "Please enter phone number"],
+            validate: [validator.isMobilePhone, "Please enter an valid phone number"],
+            unique: [true, "Phone number is already registered"],
+        },
+        isOwner: {
+            type: Boolean,
+        },
+        resetLink: {
+            type: String,
+            default: "",
+        },
     },
-    email: {
-        type: String,
-        required: [true, "Please enter an email"],
-        unique: [true, "Email is already registered"],
-        lowercase: true,
-        validate: [validator.isEmail, "Please enter an valid email"],
-    },
-    password: {
-        type: String,
-        required: [true, "Please enter a password"],
-        minlength: [6, "Minimum password length is 6 characters"],
-    },
-    phoneNumber: {
-        type: String,
-        required: [true, "Please enter phone number"],
-        validate: [validator.isMobilePhone, "Please enter an valid phone number"],
-        unique: [true, "Phone number is already registered"],
-    },
-    isOwner: {
-        type: Boolean,
-    },
-});
+    {timestamps: true}
+);
 
 //this method fire before doc save to db
 userSchema.pre("save", async function (next) {
@@ -54,21 +61,12 @@ userSchema.statics.login = async function (email: string, password: string) {
 };
 
 interface basicUserDocument extends Document {
-    name: {
-        type: String;
-    };
-    email: {
-        type: String;
-    };
-    password: {
-        type: String;
-    };
-    phoneNumber: {
-        type: String;
-    };
-    isOwner: {
-        type: Boolean;
-    };
+    name: string;
+    email: string;
+    password: string;
+    phoneNumber: string;
+    isOwner: boolean;
+    resetLink: string;
 }
 
 interface basicUserModel extends Model<basicUserDocument> {

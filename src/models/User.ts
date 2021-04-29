@@ -29,6 +29,9 @@ const userSchema = new Schema({
     isOwner: {
         type: Boolean,
     },
+    token: {
+        type: String,
+    },
 });
 
 //this method fire before doc save to db
@@ -53,6 +56,27 @@ userSchema.statics.login = async function (email: string, password: string) {
     }
 };
 
+userSchema.statics.addRefreshToken = async function (id: string, token: string) {
+    const response = await this.findByIdAndUpdate(id, {token: token}, {new: true}, (err, user) => {
+        if (err) {
+            return err;
+        } else {
+            return user;
+        }
+    });
+    return response;
+};
+
+userSchema.statics.findUserForRefreshToken = async function (id: string, token: string) {
+    const user = await this.findById(id);
+    console.log(user);
+    if (user && user.token === token) {
+        return user;
+    } else {
+        throw Error("invalid user");
+    }
+};
+
 interface basicUserDocument extends Document {
     name: {
         type: String;
@@ -69,14 +93,19 @@ interface basicUserDocument extends Document {
     isOwner: {
         type: Boolean;
     };
+    token: {
+        type: String;
+    };
 }
 
 interface basicUserModel extends Model<basicUserDocument> {
     login: (email: string, password: string) => object;
+    addRefreshToken: (id: string, token: string) => object;
+    findUserForRefreshToken: (id: string, token: string) => object;
 }
 
 const User = model<basicUserDocument, basicUserModel>("user", userSchema);
 
-userSchema.plugin(uniqueValidator);
+userSchema.plugin(uniqueValidator, {message: "{PATH} already exist"});
 
 export default User;

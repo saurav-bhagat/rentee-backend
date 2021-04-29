@@ -12,8 +12,11 @@ router.post("/signup", authController.signUp);
 
 router.post("/login", authController.authenticate);
 
-router.post("/send-sms",authController.sendSms);
+router.post("/send-sms", authController.sendSms);
 
-router.post("/verify-sms",authController.verifySms);
+router.post("/verify-sms", authController.verifySms);
+
+
+router.post('/send-details',authController.sendDetails)
 
 export default router;

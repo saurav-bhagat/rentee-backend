@@ -1,8 +1,9 @@
 import {Request, Response} from "express";
 import getJwtToken, {verifyRefreshToken} from "../utils/token";
-import User from "../models/User";
+import User, { IUser } from "../models/User";
 import handleAuthError from "../utils/authErrorHandler";
 import NodeMailer from "../config/nodemailer";
+const _ = require("lodash");
 
 export interface UserPayload {
     user?: {
@@ -48,7 +49,6 @@ export class AuthController {
                 refreshToken: refreshToken,
             });
         } catch (error: any) {
-            console.log(error);
             return res.status(400).json({err: handleAuthError(error)});
         }
     };
@@ -112,28 +112,24 @@ export class AuthController {
 
     resetPassword = async (req: any, res: any) => {
         const {newPassword, token} = req.body;
-        console.log(newPassword, token);
         if (!newPassword || !token) {
             res.status(400).json({err: "Password reset failed, try again!"});
         }
-        console.log("Going inside rty")
         try {
             const userData = await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
-            // console.log(userData, token);
 
-            if (userData.user?.resetLink == token) {
-                const updatedUser = await User.findOneAndUpdate(
-                    {resetLink: token},
-                    {
-                        password: newPassword,
-                    }
-                );
-                console.log("Password updated: ", updatedUser);
+            let userInDb = await User.findOne({ resetLink: userData.user?.resetLink });
+            if(userInDb) {
+                userInDb = _.extend(userInDb, { password: newPassword, resetLink: '' });
+                await userInDb?.save();
+
+                res.status(200).json({ msg: "Password Updated Successfuly" });
             } else {
-                console.log("RestLink coming from jwt decode and token coming from frontend are not equal");
+                res.status(400).json({ err: "Incorrect token sent" });
             }
+        
         } catch (err) {
-            console.log(err);
+            console.log("Token verification failed: " ,err);
         }
     };
 }

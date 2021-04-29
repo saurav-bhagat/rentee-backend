@@ -39,7 +39,7 @@ const userSchema = new Schema(
 );
 
 //this method fire before doc save to db
-userSchema.pre("save", async function (next) {
+userSchema.pre<IUser>("save", async function (next) {
     const salt = await bcrypt.genSalt();
     let plainText = this.get("password");
     this.set("password", await bcrypt.hash(plainText, salt));
@@ -60,7 +60,7 @@ userSchema.statics.login = async function (email: string, password: string) {
     }
 };
 
-interface basicUserDocument extends Document {
+export interface IUser extends Document {
     name: string;
     email: string;
     password: string;
@@ -69,11 +69,11 @@ interface basicUserDocument extends Document {
     resetLink: string;
 }
 
-interface basicUserModel extends Model<basicUserDocument> {
+interface basicUserModel extends Model<IUser> {
     login: (email: string, password: string) => object;
 }
 
-const User = model<basicUserDocument, basicUserModel>("user", userSchema);
+const User = model<IUser, basicUserModel>("user", userSchema);
 
 userSchema.plugin(uniqueValidator);
 

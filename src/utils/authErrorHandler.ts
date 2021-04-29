@@ -9,6 +9,7 @@ export interface ErrorMessage {
 }
 
 const handleAuthError = (err: any): any => {
+    if(err.message) return err.message;
     const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
     return errMessage.message;
 };

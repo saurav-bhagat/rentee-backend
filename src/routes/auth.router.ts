@@ -16,7 +16,6 @@ router.post("/send-sms", authController.sendSms);
 
 router.post("/verify-sms", authController.verifySms);
 
-
-router.post('/send-details',authController.sendDetails)
+router.post("/send-details", authController.sendDetails);
 
 export default router;

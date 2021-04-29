@@ -18,8 +18,8 @@ const propertySchema = new Schema({
                     tenants: [
                         {
                             personId: {type: Schema.Types.ObjectId, ref: "user"},
-                           // personId: String,
-                            joinDate:{type:Date,default:Date.now },
+                            // personId: String,
+                            joinDate: {type: Date, default: Date.now},
                             rentDueDate: Date,
                             //securityPaid: {type: Number, required: [true, "Please enter security paid"]},
                             securityPaid: Number,

@@ -94,10 +94,15 @@ export class AuthController {
     };
 
     sendSms = (req: Request, res: Response) => {
-        sendOTP(req, res);
+        console.log("receiving phone number for opt");
+        //For development purposes we need to comment the below function
+        // sendOTP(req, res);
     };
 
     verifySms = (req: Request, res: Response) => {
-        verifyOTP(req, res);
+        //For development purposes we need to comment the below function
+        //  verifyOTP(req, res);
     };
+
+   
 }

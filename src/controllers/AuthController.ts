@@ -12,14 +12,6 @@ export interface UserPayload {
         email: string;
     };
     iat?: number;
-    // _id?: string;
-    // name:string;
-    // email:string;
-    // password:string;
-    // phoneNumber:number;
-    // isOwner:boolean;
-    // token:string;
-    // iat?: number;
 }
 
 export class AuthController {

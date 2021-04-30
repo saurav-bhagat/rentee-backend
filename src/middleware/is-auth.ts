@@ -1,9 +1,9 @@
 import * as jwt from "jsonwebtoken";
-import {UserPayload} from "../controllers/AuthController";
+import {IUser} from "../models/User";
 
 export default (req: any, res: any, next: any) => {
     const authHeader = req.get("Authorization");
-    let decodedToken: UserPayload;
+    let decodedToken: IUser;
 
     if (!authHeader) {
         req.isAuth = false;
@@ -17,7 +17,7 @@ export default (req: any, res: any, next: any) => {
     }
 
     try {
-        decodedToken = jwt.verify(token, process.env.JWT_ACCESS_SECRET as string) as UserPayload;
+        decodedToken = <IUser>jwt.verify(token, process.env.JWT_ACCESS_SECRET as string);
         console.log("Decoded token is: ", decodedToken);
     } catch (err) {
         console.log(err);
@@ -29,6 +29,6 @@ export default (req: any, res: any, next: any) => {
         return next();
     }
     req.isAuth = true;
-    req.user = decodedToken.user;
+    req.user = decodedToken;
     next();
 };

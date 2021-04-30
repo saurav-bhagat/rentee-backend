@@ -2,19 +2,17 @@ import nodemailer from "nodemailer";
 import Mail from "nodemailer/lib/mailer";
 
 export default class NodeMailer {
-
     getTransporter = async () => {
-
         // create reusable transporter object using the default SMTP transport
         // TODO: user own SMTP server
         const transporter = nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
+            host: "smtp.ethereal.email",
             port: 587,
             secure: false,
             auth: {
-                user: 'alfred58@ethereal.email',
-                pass: 'hXXjau63caQSem1Jef'
-            }
+                user: "alfred58@ethereal.email",
+                pass: "hXXjau63caQSem1Jef",
+            },
         });
         return transporter;
     };
@@ -30,12 +28,11 @@ export default class NodeMailer {
         };
         transporter.sendMail(mailOptions, (err, info) => {
             if (err) return false;
-            else{
+            else {
                 //currently we can see the link only here not in gmail
                 console.log(nodemailer.getTestMessageUrl(info));
                 return true;
             }
-            
         });
         return false;
     };

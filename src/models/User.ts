@@ -34,6 +34,9 @@ const userSchema = new Schema(
             type: String,
             default: "",
         },
+        token: {
+            type: String,
+        },
     },
     {timestamps: true}
 );
@@ -61,6 +64,7 @@ userSchema.statics.login = async function (email: string, password: string) {
 };
 
 export interface IUser extends Document {
+    _id: Schema.Types.ObjectId;
     name: string;
     email: string;
     password: string;
@@ -69,12 +73,35 @@ export interface IUser extends Document {
     resetLink: string;
 }
 
+userSchema.statics.addRefreshToken = async function (id: string, token: string) {
+    const response = await this.findByIdAndUpdate(id, {token: token, resetLink: ""}, {new: true}, (err, user) => {
+        if (err) {
+            return err;
+        } else {
+            return user;
+        }
+    });
+    return response;
+};
+
+userSchema.statics.findUserForRefreshToken = async function (id: string, token: string) {
+    const user = await this.findById(id);
+    console.log(user);
+    if (user && user.token === token) {
+        return user;
+    } else {
+        throw Error("Invalid user");
+    }
+};
+
 interface basicUserModel extends Model<IUser> {
-    login: (email: string, password: string) => object;
+    login: (email: Schema.Types.ObjectId, password: string) => IUser;
+    addRefreshToken: (id: Schema.Types.ObjectId, token: string) => object;
+    findUserForRefreshToken: (id: Schema.Types.ObjectId, token: string) => IUser;
 }
 
 const User = model<IUser, basicUserModel>("user", userSchema);
 
-userSchema.plugin(uniqueValidator);
+userSchema.plugin(uniqueValidator, {message: "{PATH} already exist"});
 
 export default User;

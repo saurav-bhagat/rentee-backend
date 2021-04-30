@@ -1,11 +1,12 @@
-import path from "path";
 import dotenv from "dotenv";
+import path from "path";
+dotenv.config({path: path.resolve(__dirname, "../.env")});
+
 import express from "express";
 import db from "./config/db";
 import routes from "./routes";
 import isAuth from "./middleware/is-auth";
 
-dotenv.config({path: path.resolve(__dirname, "../.env")});
 const app = express();
 
 const PORT = process.env.PORT || 3000;

@@ -10,6 +10,6 @@ const ownerController: OwnerController = new OwnerController();
 //endpoints for owner
 router.get("/ping", ownerController.pong);
 
-//router.get("/details", authController.verifyUser);
+router.post("/send-details", ownerController.sendDetails);
 
 export default router;

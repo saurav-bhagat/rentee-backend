@@ -1,19 +1,10 @@
 import {Request, Response} from "express";
 import getJwtToken, {verifyRefreshToken} from "../utils/token";
-import User, { IUser } from "../models/User";
+import User, {IUser} from "../models/User";
+import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
 import handleAuthError from "../utils/authErrorHandler";
 import NodeMailer from "../config/nodemailer";
 const _ = require("lodash");
-
-export interface UserPayload {
-    user?: {
-        id: number;
-        username: string;
-        email: string;
-        resetLink?: string;
-    };
-    iat?: number;
-}
 
 export class AuthController {
     signUp = async (req: Request, res: Response) => {
@@ -21,11 +12,18 @@ export class AuthController {
         const userData = {name, email, password, phoneNumber};
 
         try {
-            const user = await User.create(userData);
-            console.log(user);
-            return res.status(200).json(user);
+            const userdoc = await User.create(userData);
+
+            //  Genrating tokens
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
+
+            //Providing token to user
+            const user = await User.addRefreshToken(userdoc._id, refreshToken);
+
+            res.status(200).json({user, accessToken});
         } catch (error) {
-            console.log(error);
+            // console.log(error);
             return res.status(400).json({err: handleAuthError(error)});
         }
     };
@@ -36,17 +34,17 @@ export class AuthController {
         if (!email || !password) res.status(400).json({err: "Invalid Email/Password"});
 
         try {
-            //will verify user password
-            const user = await User.login(email, password);
+            const userdoc: IUser = await User.login(email, password);
 
-            const accessToken = await getJwtToken(user, process.env.JWT_ACCESS_SECRET as string, "10s");
-            const refreshToken = await getJwtToken(user, process.env.JWT_REFRESH_SECRET as string, "1d");
-            // Todo: store refreshtokens in db
+            // For generating tokens
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
+
+            const user = await User.addRefreshToken(userdoc._id, refreshToken);
 
             return res.status(200).json({
                 user,
                 accessToken: accessToken,
-                refreshToken: refreshToken,
             });
         } catch (error: any) {
             return res.status(400).json({err: handleAuthError(error)});
@@ -58,22 +56,21 @@ export class AuthController {
 
         try {
             if (!refreshToken) throw Error("refresh token error");
+
             // verifyrefresh token method verify token and give us the payload inside it
-            const user: UserPayload = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
+            const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
-            //Todo: we need to verify the refresh token provide by post req vs refresh token in db
-            //       and user store in token vs user store in db
+            const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
 
-            const accessToken = await getJwtToken(user, process.env.JWT_ACCESS_SECRET as string, "40s");
-            const newRefreshToken = await getJwtToken(user, process.env.JWT_REFRESH_SECRET as string, "1d");
+            // Generating token
+            const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, "2m");
+            const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, "1d");
 
-            //Todo :
-            // after verifying and generating token we need to store new refreshToken corresponds to user in db
+            const user = await User.addRefreshToken(validUser._id, newRefreshToken);
 
             return res.status(200).json({
                 user,
                 accessToken: accessToken,
-                refreshToken: newRefreshToken,
             });
         } catch (error) {
             return res.status(400).json({err: error.message});
@@ -92,7 +89,9 @@ export class AuthController {
                 const token = await getJwtToken(user, process.env.JWT_RESET_SECRET as string, "20m");
                 //saving reset link as when frontend will send request to resetPassword, token should be verified
                 //and password should be updated for that user
+
                 const updatedUser = await user?.updateOne({resetLink: token});
+
                 const mailData = {
                     to: user?.email,
                     subject: "Reset Password",
@@ -118,18 +117,34 @@ export class AuthController {
         try {
             const userData = await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
 
-            let userInDb = await User.findOne({ resetLink: userData.user?.resetLink });
-            if(userInDb) {
-                userInDb = _.extend(userInDb, { password: newPassword, resetLink: '' });
-                await userInDb?.save();
+            let userInDb: IUser = <IUser>await User.findOne({resetLink: token});
 
-                res.status(200).json({ msg: "Password Updated Successfuly" });
+            if (userInDb) {
+                userInDb = _.extend(userInDb, {password: newPassword, resetLink: ""});
+
+                userInDb?.save(function (err) {
+                    if (err) {
+                        console.log("Error while saving data: ", err);
+                        res.status(400).json({err: "Couldn't update password, try again!"});
+                    }
+                    res.status(200).json({msg: "Password Updated Successfuly"});
+                });
             } else {
-                res.status(400).json({ err: "Incorrect token sent" });
+                res.status(400).json({err: "Incorrect token sent"});
             }
-        
         } catch (err) {
-            console.log("Token verification failed: " ,err);
+            res.status(400).json({err: "Incorrect token sent - Authorization error"});
         }
+    };
+
+    sendSms = (req: Request, res: Response) => {
+        console.log("receiving phone number for opt");
+        //For development purposes we need to comment the below function
+        // sendOTP(req, res);
+    };
+
+    verifySms = (req: Request, res: Response) => {
+        //For development purposes we need to comment the below function
+        //  verifyOTP(req, res);
     };
 }

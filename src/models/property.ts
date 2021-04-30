@@ -1,5 +1,4 @@
 import {Schema, model, Document, Model} from "mongoose";
-import validator from "validator";
 import uniqueValidator from "mongoose-unique-validator";
 
 const propertySchema = new Schema({
@@ -18,11 +17,9 @@ const propertySchema = new Schema({
                     tenants: [
                         {
                             personId: {type: Schema.Types.ObjectId, ref: "user"},
-                            // personId: String,
                             joinDate: {type: Date, default: Date.now},
                             rentDueDate: Date,
-                            //securityPaid: {type: Number, required: [true, "Please enter security paid"]},
-                            securityPaid: Number,
+                            securityAmount : Number,
                         },
                     ],
                 },
@@ -31,7 +28,31 @@ const propertySchema = new Schema({
     ],
 });
 
-const property = model("property", propertySchema);
+
+interface propertyDocument extends Document{
+        buildings:[
+            {
+                name:String;
+                address:String;
+                rooms:[
+                    rent:Number,
+                    type:String,
+                    floor:String,
+                    roomNo:Number,
+                    isEmpty:Boolean,
+                    tenants:[
+                        personId:String,
+                        joinDate:Date,
+                        rentDueDate:Date,
+                        securityAmount:Number
+                    ]
+                ]
+            }
+        ]
+}
+
+
+const property = model<propertyDocument>("property", propertySchema);
 
 propertySchema.plugin(uniqueValidator, {message: "{PATH} already exist"});
 

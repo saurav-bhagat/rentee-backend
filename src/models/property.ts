@@ -19,7 +19,7 @@ const propertySchema = new Schema({
                             personId: {type: Schema.Types.ObjectId, ref: "user"},
                             joinDate: {type: Date, default: Date.now},
                             rentDueDate: Date,
-                            securityAmount : Number,
+                            securityAmount: Number,
                         },
                     ],
                 },
@@ -28,29 +28,22 @@ const propertySchema = new Schema({
     ],
 });
 
-
-interface propertyDocument extends Document{
-        buildings:[
-            {
-                name:String;
-                address:String;
-                rooms:[
-                    rent:Number,
-                    type:String,
-                    floor:String,
-                    roomNo:Number,
-                    isEmpty:Boolean,
-                    tenants:[
-                        personId:String,
-                        joinDate:Date,
-                        rentDueDate:Date,
-                        securityAmount:Number
-                    ]
-                ]
-            }
-        ]
+interface propertyDocument extends Document {
+    buildings: [
+        {
+            name: String;
+            address: String;
+            rooms: [
+                rent: Number,
+                type: String,
+                floor: String,
+                roomNo: Number,
+                isEmpty: Boolean,
+                tenants: [personId: String, joinDate: Date, rentDueDate: Date, securityAmount: Number]
+            ];
+        }
+    ];
 }
-
 
 const property = model<propertyDocument>("property", propertySchema);
 

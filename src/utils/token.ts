@@ -1,9 +1,16 @@
 import {sign, verify} from "jsonwebtoken";
+import {IUser} from "../models/User";
 
-const createToken = (userId: any, jwtSecret: string, expireTime: string) => {
+const createToken = (user: IUser, jwtSecret: string, expireTime: string): Promise<string> => {
     return new Promise((resolve, reject) => {
         const payload = {
-            user: userId,
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            password: user.password,
+            phoneNumber: user.phoneNumber,
+            isOwner: user.isOwner,
+            resetLink: user.resetLink,
         };
         const options = {
             expiresIn: expireTime,
@@ -12,20 +19,20 @@ const createToken = (userId: any, jwtSecret: string, expireTime: string) => {
         };
         sign(payload, jwtSecret, options, (err, token) => {
             if (err) {
-                console.log(err.message);
+                console.log("Error while signing token: ", err.message);
                 reject(err);
-                return;
             }
-            resolve(token);
+            //we use ! as we know at this line token can't be null
+            resolve(token!);
         });
     });
 };
 
-export const verifyRefreshToken = (refreshToken: string) => {
+export const verifyRefreshToken = (refreshToken: string, secret: string): Promise<IUser> => {
     return new Promise((resolve, reject) => {
-        verify(refreshToken, process.env.JWT_REFRESH_SECRET as string, (err, payload) => {
+        verify(refreshToken, secret, (err, payload) => {
             if (err) return reject("Authorization Error");
-            resolve(payload);
+            resolve(<IUser>payload);
         });
     });
 };

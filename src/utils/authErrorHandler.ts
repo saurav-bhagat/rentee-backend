@@ -9,8 +9,11 @@ export interface ErrorMessage {
 }
 
 const handleAuthError = (err: any): any => {
-    const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
-    return errMessage.message;
+    if (err.errors) {
+        const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
+        return errMessage.message;
+    }
+    return err.message;
 };
 
 export const isEmptyFields = (obj: any) => {

@@ -5,6 +5,7 @@ export default async () => {
         .connect(process.env.DATABASE_URI as string, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            useFindAndModify: false,
         })
         .then(() => {
             console.log("Db Connection successful");

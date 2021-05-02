@@ -5,6 +5,7 @@ import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
 import handleAuthError from "../utils/authErrorHandler";
 import NodeMailer from "../config/nodemailer";
 const _ = require("lodash");
+import bcrypt from "bcrypt";
 
 export class AuthController {
     signUp = async (req: Request, res: Response) => {
@@ -15,7 +16,7 @@ export class AuthController {
             const userdoc = await User.create(userData);
 
             //  Genrating tokens
-            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
             const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
 
             //Providing token to user
@@ -37,7 +38,7 @@ export class AuthController {
             const userdoc: IUser = await User.login(email, password);
 
             // For generating tokens
-            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
             const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
 
             const user = await User.addRefreshToken(userdoc._id, refreshToken);
@@ -117,21 +118,26 @@ export class AuthController {
         try {
             const userData = await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
 
-            let userInDb: IUser = <IUser>await User.findOne({resetLink: token});
+            const salt = await bcrypt.genSalt();
+            const password = await bcrypt.hash(newPassword, salt);
 
-            if (userInDb) {
-                userInDb = _.extend(userInDb, {password: newPassword, resetLink: ""});
-
-                userInDb?.save(function (err) {
-                    if (err) {
-                        console.log("Error while saving data: ", err);
-                        res.status(400).json({err: "Couldn't update password, try again!"});
+            let userInDb: IUser = <IUser>await User.findOneAndUpdate(
+                {
+                    resetLink: token,
+                },
+                {
+                    password,
+                    resetLink: "",
+                },
+                {new: true},
+                (err, doc) => {
+                    if (err || !doc) {
+                        console.log(err);
+                        res.status(400).json({err: "Password update failed, try again!!"});
                     }
                     res.status(200).json({msg: "Password Updated Successfuly"});
-                });
-            } else {
-                res.status(400).json({err: "Incorrect token sent"});
-            }
+                }
+            );
         } catch (err) {
             res.status(400).json({err: "Incorrect token sent - Authorization error"});
         }

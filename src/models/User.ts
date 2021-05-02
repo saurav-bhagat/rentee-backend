@@ -34,7 +34,7 @@ const userSchema = new Schema(
             type: String,
             default: "",
         },
-        token: {
+        refreshToken: {
             type: String,
         },
     },
@@ -71,10 +71,11 @@ export interface IUser extends Document {
     phoneNumber: string;
     isOwner: boolean;
     resetLink: string;
+    refreshToken: string;
 }
 
-userSchema.statics.addRefreshToken = async function (id: string, token: string) {
-    const response = await this.findByIdAndUpdate(id, {token: token, resetLink: ""}, {new: true}, (err, user) => {
+userSchema.statics.addRefreshToken = async function (id: string, refreshToken: string) {
+    const response = await this.findByIdAndUpdate(id, {refreshToken, resetLink: ""}, {new: true}, (err, user) => {
         if (err) {
             return err;
         } else {
@@ -84,10 +85,10 @@ userSchema.statics.addRefreshToken = async function (id: string, token: string) 
     return response;
 };
 
-userSchema.statics.findUserForRefreshToken = async function (id: string, token: string) {
+userSchema.statics.findUserForRefreshToken = async function (id: string, refreshToken: string) {
     const user = await this.findById(id);
     console.log(user);
-    if (user && user.token === token) {
+    if (user && user.refreshToken === refreshToken) {
         return user;
     } else {
         throw Error("Invalid user");
@@ -96,8 +97,8 @@ userSchema.statics.findUserForRefreshToken = async function (id: string, token: 
 
 interface basicUserModel extends Model<IUser> {
     login: (email: Schema.Types.ObjectId, password: string) => IUser;
-    addRefreshToken: (id: Schema.Types.ObjectId, token: string) => object;
-    findUserForRefreshToken: (id: Schema.Types.ObjectId, token: string) => IUser;
+    addRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => object;
+    findUserForRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => IUser;
 }
 
 const User = model<IUser, basicUserModel>("user", userSchema);

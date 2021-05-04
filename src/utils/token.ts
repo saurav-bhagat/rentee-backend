@@ -1,5 +1,5 @@
 import {sign, verify} from "jsonwebtoken";
-import {IUser} from "../models/User";
+import {IUser} from "../models/user/interface";
 
 const createToken = (user: IUser, jwtSecret: string, expireTime: string): Promise<string> => {
     return new Promise((resolve, reject) => {

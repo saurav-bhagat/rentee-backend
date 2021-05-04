@@ -2,6 +2,7 @@ import {Schema, model, Document, Model} from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import uniqueValidator from "mongoose-unique-validator";
+import {IUser, IModel} from "./interface";
 
 const userSchema = new Schema(
     {
@@ -29,12 +30,13 @@ const userSchema = new Schema(
         },
         isOwner: {
             type: Boolean,
+            default: false,
         },
         resetLink: {
             type: String,
             default: "",
         },
-        token: {
+        refreshToken: {
             type: String,
         },
     },
@@ -63,18 +65,8 @@ userSchema.statics.login = async function (email: string, password: string) {
     }
 };
 
-export interface IUser extends Document {
-    _id: Schema.Types.ObjectId;
-    name: string;
-    email: string;
-    password: string;
-    phoneNumber: string;
-    isOwner: boolean;
-    resetLink: string;
-}
-
-userSchema.statics.addRefreshToken = async function (id: string, token: string) {
-    const response = await this.findByIdAndUpdate(id, {token: token, resetLink: ""}, {new: true}, (err, user) => {
+userSchema.statics.addRefreshToken = async function (id: string, refreshToken: string) {
+    const response = await this.findByIdAndUpdate(id, {refreshToken, resetLink: ""}, {new: true}, (err, user) => {
         if (err) {
             return err;
         } else {
@@ -84,23 +76,17 @@ userSchema.statics.addRefreshToken = async function (id: string, token: string) 
     return response;
 };
 
-userSchema.statics.findUserForRefreshToken = async function (id: string, token: string) {
+userSchema.statics.findUserForRefreshToken = async function (id: string, refreshToken: string) {
     const user = await this.findById(id);
     console.log(user);
-    if (user && user.token === token) {
+    if (user && user.refreshToken === refreshToken) {
         return user;
     } else {
         throw Error("Invalid user");
     }
 };
 
-interface basicUserModel extends Model<IUser> {
-    login: (email: Schema.Types.ObjectId, password: string) => IUser;
-    addRefreshToken: (id: Schema.Types.ObjectId, token: string) => object;
-    findUserForRefreshToken: (id: Schema.Types.ObjectId, token: string) => IUser;
-}
-
-const User = model<IUser, basicUserModel>("user", userSchema);
+const User = model<IUser, IModel>("user", userSchema);
 
 userSchema.plugin(uniqueValidator, {message: "{PATH} already exist"});
 

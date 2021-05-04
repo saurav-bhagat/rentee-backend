@@ -12,4 +12,8 @@ router.get("/ping", ownerController.pong);
 
 router.post("/send-details", ownerController.sendDetails);
 
+router.post("/tenant-registration", ownerController.tenantRegistration);
+
+router.post("/all-owner-buildings", ownerController.getAllOwnerBuildings);
+
 export default router;

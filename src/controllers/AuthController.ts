@@ -1,43 +1,45 @@
-import { Request, Response } from "express";
-import getJwtToken, { verifyRefreshToken } from "../utils/token";
-import User, { IUser } from "../models/User";
-import { sendOTP, verifyOTP } from "../utils/phoneNumberVerification";
+import {Request, Response} from "express";
+import getJwtToken, {verifyRefreshToken} from "../utils/token";
+import User from "../models/user/User";
+import {IUser} from "../models/user/interface";
+import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
 import handleAuthError from "../utils/authErrorHandler";
 import NodeMailer from "../config/nodemailer";
 const _ = require("lodash");
+import bcrypt from "bcrypt";
 
 export class AuthController {
     signUp = async (req: Request, res: Response) => {
-        const { name, email, password, phoneNumber } = req.body;
-        const userData = { name, email, password, phoneNumber };
+        const {name, email, password, phoneNumber} = req.body;
+        const userData = {name, email, password, phoneNumber};
 
         try {
             const userdoc = await User.create(userData);
 
             //  Genrating tokens
-            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
             const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
 
             //Providing token to user
             const user = await User.addRefreshToken(userdoc._id, refreshToken);
 
-            res.status(200).json({ user, accessToken });
+            res.status(200).json({user, accessToken});
         } catch (error) {
             // console.log(error);
-            return res.status(400).json({ err: handleAuthError(error) });
+            return res.status(400).json({err: handleAuthError(error)});
         }
     };
 
     // for login purposes
     authenticate = async (req: Request, res: Response) => {
-        const { email, password } = req.body;
-        if (!email || !password) res.status(400).json({ err: "Invalid Email/Password" });
+        const {email, password} = req.body;
+        if (!email || !password) res.status(400).json({err: "Invalid Email/Password"});
 
         try {
             const userdoc: IUser = await User.login(email, password);
 
             // For generating tokens
-            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "1d");
+            const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
             const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
 
             const user = await User.addRefreshToken(userdoc._id, refreshToken);
@@ -47,12 +49,12 @@ export class AuthController {
                 accessToken: accessToken,
             });
         } catch (error: any) {
-            return res.status(400).json({ err: handleAuthError(error) });
+            return res.status(400).json({err: handleAuthError(error)});
         }
     };
 
     handleRefreshToken = async (req: any, res: any) => {
-        const { refreshToken } = req.body;
+        const {refreshToken} = req.body;
 
         try {
             if (!refreshToken) throw Error("refresh token error");
@@ -73,24 +75,26 @@ export class AuthController {
                 accessToken: accessToken,
             });
         } catch (error) {
-            return res.status(400).json({ err: error.message });
+            return res.status(400).json({err: error.message});
         }
     };
 
     forgotPassword = async (req: any, res: any) => {
-        const { email } = req.body;
-        if (!email) res.status(400).json({ err: "Please Enter your email" });
-
+        const {email} = req.body;
+        if (!email) res.status(400).json({err: "Please Enter your email"});
+        // i think this we can handle it on frontend part no need to make req
+        // with empty field and email is valid or not is also on frontend check
+        // but for now keep it
         const nodeMailer = new NodeMailer();
         try {
-            const user = await User.findOne({ email });
+            const user = await User.findOne({email});
             //not finding a user in DB is not an error, so it will not go inside catch block, it needs to be handled here
             if (user) {
                 const token = await getJwtToken(user, process.env.JWT_RESET_SECRET as string, "20m");
                 //saving reset link as when frontend will send request to resetPassword, token should be verified
                 //and password should be updated for that user
 
-                const updatedUser = await user?.updateOne({ resetLink: token });
+                const updatedUser = await user?.updateOne({resetLink: token});
 
                 const mailData = {
                     to: user?.email,
@@ -101,39 +105,51 @@ export class AuthController {
                     `,
                 };
                 if (nodeMailer.sendMail(mailData))
-                    return res.status(200).json({ msg: "Please check your registered Email ID", token, updatedUser });
+                    return res.status(200).json({msg: "Please check your registered Email ID", token, updatedUser});
             }
-            return res.status(400).json({ err: "Email Does not exist" });
+            return res.status(400).json({err: "Email Does not exist"});
         } catch (err) {
-            return res.status(400).json({ err: "Password reset Failed, try again" });
+            return res.status(400).json({err: "Password reset Failed, try again"});
         }
     };
 
     resetPassword = async (req: any, res: any) => {
-        const { newPassword, token } = req.body;
+        const {newPassword, token} = req.body;
+        // this field can't be empty check by frontend no need here
+        // but for now keep it
+        //Note : we also make sure newpassword len is 6 character
         if (!newPassword || !token) {
-            res.status(400).json({ err: "Password reset failed, try again!" });
+            res.status(400).json({err: "Password reset failed, try again!"});
         }
         try {
             await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
 
-            let userInDb: IUser = <IUser>await User.findOne({ resetLink: token });
+            const salt = await bcrypt.genSalt();
+            const password = await bcrypt.hash(newPassword, salt);
 
-            if (userInDb) {
-                userInDb = _.extend(userInDb, { password: newPassword, resetLink: "" });
-
-                userInDb?.save(function (err) {
-                    if (err) {
-                        console.log("Error while saving data: ", err);
-                        res.status(400).json({ err: "Couldn't update password, try again!" });
+            let userInDb: IUser = <IUser>await User.findOneAndUpdate(
+                {
+                    resetLink: token,
+                },
+                {
+                    password,
+                    resetLink: "",
+                },
+                {
+                    new: true,
+                    runValidators: true,
+                    context: "query",
+                },
+                (err, doc) => {
+                    if (err || !doc) {
+                        console.log(err);
+                        res.status(400).json({err: "Password update failed, try again!!"});
                     }
-                    res.status(200).json({ msg: "Password Updated Successfuly" });
-                });
-            } else {
-                res.status(400).json({ err: "Incorrect token sent" });
-            }
+                    res.status(200).json({msg: "Password Updated Successfuly"});
+                }
+            );
         } catch (err) {
-            res.status(400).json({ err: "Incorrect token sent - Authorization error" });
+            res.status(400).json({err: "Incorrect token sent - Authorization error"});
         }
     };
 

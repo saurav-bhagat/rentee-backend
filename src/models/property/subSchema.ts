@@ -1,7 +1,7 @@
 import {Schema} from "mongoose";
 
 export const tenantSchema = new Schema({
-    personId: {type: Schema.Types.ObjectId, ref: "user"},
+    personId: {type: Schema.Types.ObjectId, ref: "user", unique: true},
     joinDate: {type: Date, default: Date.now},
     rentDueDate: Date,
     securityAmount: Number,

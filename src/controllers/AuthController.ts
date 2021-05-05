@@ -3,7 +3,7 @@ import getJwtToken, {verifyRefreshToken} from "../utils/token";
 import User from "../models/user/User";
 import {IUser} from "../models/user/interface";
 import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
-import handleAuthError from "../utils/authErrorHandler";
+import handleDbError from "../utils/dbErrorhandler";
 import NodeMailer from "../config/nodemailer";
 const _ = require("lodash");
 import bcrypt from "bcrypt";
@@ -26,7 +26,7 @@ export class AuthController {
             res.status(200).json({user, accessToken});
         } catch (error) {
             // console.log(error);
-            return res.status(400).json({err: handleAuthError(error)});
+            return res.status(400).json({err: handleDbError(error)});
         }
     };
 
@@ -49,7 +49,7 @@ export class AuthController {
                 accessToken: accessToken,
             });
         } catch (error: any) {
-            return res.status(400).json({err: handleAuthError(error)});
+            return res.status(400).json({err: handleDbError(error)});
         }
     };
 

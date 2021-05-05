@@ -8,7 +8,7 @@ export interface ErrorMessage {
     path: string;
 }
 
-const handleAuthError = (err: any): any => {
+const handleDbError = (err: any): any => {
     if (err.errors) {
         const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
         return errMessage.message;
@@ -25,4 +25,12 @@ export const isEmptyFields = (obj: any) => {
     }
 };
 
-export default handleAuthError;
+export const verifyObjectId = (id: string) => {
+    if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        return true;
+    } else {
+        false;
+    }
+};
+
+export default handleDbError;

@@ -3,7 +3,7 @@ import {isValidObjectId} from "mongoose";
 import {IProperty} from "../models/property/interface";
 import Property from "../models/property/property";
 import User from "../models/user/User";
-import handleDbError, {isEmptyFields} from "../utils/dbErrorhandler";
+import {handleDbError, isEmptyFields} from "../utils/errorUtils";
 import randomstring from "randomstring";
 
 export class OwnerController {
@@ -15,11 +15,11 @@ export class OwnerController {
         const {ownerId, buildings} = req.body;
         if (!ownerId || !isValidObjectId(ownerId)) {
             return res.status(400).json({err: "Incorrect owner detail"});
-        } 
+        }
         if (buildings === undefined || buildings.length === 0) {
             return res.status(400).json({err: "Atleast one building present"});
         }
-        const propertyDetails= <IProperty>{ownerId, buildings};
+        const propertyDetails = <IProperty>{ownerId, buildings};
         try {
             const property = new Property(propertyDetails);
             const propertyDoc = await property.save();
@@ -81,13 +81,13 @@ export class OwnerController {
         const {ownerId} = req.body;
         if (!ownerId || !isValidObjectId(ownerId)) {
             return res.status(400).json({err: "Incorrect owner detail"});
-        } 
+        }
         if (req.user) {
             Property.findOne({ownerId})
-            .populate({
-                path: "buildings.rooms.tenants.personId", 
-               
-             }) .then((user) => {
+                .populate({
+                    path: "buildings.rooms.tenants.personId",
+                })
+                .then((user) => {
                     return res.json(user);
                 });
         } else {

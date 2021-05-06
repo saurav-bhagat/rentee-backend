@@ -3,9 +3,9 @@ import getJwtToken, {verifyRefreshToken} from "../utils/token";
 import User from "../models/user/User";
 import {IUser} from "../models/user/interface";
 import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
-import handleDbError,{isEmptyFields} from "../utils/dbErrorhandler";
+import {handleDbError, isEmptyFields} from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
-import validator from 'validator';
+import validator from "validator";
 import bcrypt from "bcrypt";
 
 export class AuthController {
@@ -16,37 +16,36 @@ export class AuthController {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
 
-        if(!validator.isEmail(email) || password.length<6 || !validator.isMobilePhone(phoneNumber)){ 
-            return res.status(400).json({err:"Either email/password/phonenumber is not valid"})
-        };
-       
+        if (!validator.isEmail(email) || password.length < 6 || !validator.isMobilePhone(phoneNumber)) {
+            return res.status(400).json({err: "Either email/password/phonenumber is not valid"});
+        }
+
         try {
             const userdoc = await User.create(userData);
 
             const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
             const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
-         
+
             const user = await User.addRefreshToken(userdoc._id, refreshToken);
 
-           return res.status(200).json({user, accessToken});
+            return res.status(200).json({user, accessToken});
         } catch (error) {
             return res.status(400).json({err: handleDbError(error)});
         }
     };
 
-    
     authenticate = async (req: Request, res: Response) => {
         const {email, password} = req.body;
-        const userData={email,password};
+        const userData = {email, password};
 
         if (isEmptyFields(userData)) {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
 
-        if(!validator.isEmail(email) || password.length<6){
-            return res.status(400).json({err:"Either email/password is not valid"})
+        if (!validator.isEmail(email) || password.length < 6) {
+            return res.status(400).json({err: "Either email/password is not valid"});
         }
-       
+
         try {
             const userdoc: IUser = await User.login(email, password);
 
@@ -67,7 +66,9 @@ export class AuthController {
 
     handleRefreshToken = async (req: any, res: any) => {
         const {refreshToken} = req.body;
-        if(refreshToken.length==0){ return res.status(400).json({err: "All fields are mandatory!"});}
+        if (refreshToken.length == 0) {
+            return res.status(400).json({err: "All fields are mandatory!"});
+        }
         try {
             if (!refreshToken) throw Error("Refresh token error");
 
@@ -76,7 +77,6 @@ export class AuthController {
 
             const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
 
-           
             const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, "2m");
             const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, "1d");
 
@@ -93,15 +93,17 @@ export class AuthController {
 
     forgotPassword = async (req: any, res: any) => {
         const {email} = req.body;
-        if (!email) return res.status(400).json({err: "All fields are mandatory!"});
-        if(!validator.isEmail(email)){ return res.json({err:"Email is not valid"})};
+        if (!email) return res.status(400).json({err: "Email is  mandatory!"});
+        if (!validator.isEmail(email)) {
+            return res.json({err: "Email is not valid"});
+        }
         const nodeMailer = new NodeMailer();
         try {
             const user = await User.findOne({email});
             //not finding a user in DB is not an error, so it will not go inside catch block, it needs to be handled here
             if (user) {
                 const token = await getJwtToken(user, process.env.JWT_RESET_SECRET as string, "20m");
-                
+
                 const updatedUser = await user?.updateOne({resetLink: token});
 
                 const mailData = {
@@ -123,13 +125,13 @@ export class AuthController {
 
     resetPassword = async (req: any, res: any) => {
         const {newPassword, token} = req.body;
-        
+
         if (!newPassword || !token) {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
-        if(newPassword.length<6){
-            return res.json({err:"Minimum password length is 6 characters"});
-         }
+        if (newPassword.length < 6) {
+            return res.json({err: "Minimum password length is 6 characters"});
+        }
         try {
             await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
 

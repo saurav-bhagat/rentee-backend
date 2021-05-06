@@ -1,4 +1,3 @@
-//const _ = require("lodash");
 import _ from "lodash";
 
 export interface ErrorMessage {
@@ -9,7 +8,7 @@ export interface ErrorMessage {
     path: string;
 }
 
-const handleDbError = (err: any): any => {
+export const handleDbError = (err: any): any => {
     if (err.errors) {
         const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
         return errMessage.message;
@@ -19,7 +18,7 @@ const handleDbError = (err: any): any => {
 
 export const isEmptyFields = (obj: any) => {
     const objValues = Object.values(obj);
-    if (_.includes(objValues, "") || _.includes(objValues, null) || _.includes(objValues,undefined)) {
+    if (_.includes(objValues, "") || _.includes(objValues, null) || _.includes(objValues, undefined)) {
         return true;
     } else {
         return false;
@@ -33,5 +32,3 @@ export const verifyObjectId = (id: string) => {
         false;
     }
 };
-
-export default handleDbError;

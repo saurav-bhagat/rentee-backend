@@ -13,21 +13,17 @@ export class OwnerController {
 
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildings} = req.body;
-        if (ownerId === null) {
-            return res.status(400).json({err: "ownerId can't be null"});
-        } else {
-            if (!isValidObjectId(ownerId)) {
-                return res.status(400).json({err: "objectId not correct"});
-            }
-        }
+        if (!ownerId || !isValidObjectId(ownerId)) {
+            return res.status(400).json({err: "Incorrect owner detail"});
+        } 
         if (buildings === undefined || buildings.length === 0) {
-            return res.status(400).json({err: "atleast one building present"});
+            return res.status(400).json({err: "Atleast one building present"});
         }
-        const propertyDetails = <IProperty>{ownerId, buildings};
+        const propertyDetails= <IProperty>{ownerId, buildings};
         try {
             const property = new Property(propertyDetails);
             const propertyDoc = await property.save();
-            return res.status(200).json({propertyDoc, msg: "all details of property added succesfully"});
+            return res.status(200).json({propertyDoc, msg: "All details of property added succesfully"});
         } catch (error) {
             return res.status(400).json({err: handleDbError(error)});
         }
@@ -42,18 +38,18 @@ export class OwnerController {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
         if (!isValidObjectId(ownerId)) {
-            return res.status(400).json({err: "objectId not correct"});
+            return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (!isValidObjectId(buildId)) {
-            return res.status(400).json({err: "buildId not correct"});
+            return res.status(400).json({err: "Building can't find"});
         }
         if (!isValidObjectId(roomId)) {
-            return res.status(400).json({err: "roomId not correct"});
+            return res.status(400).json({err: "Room can't find"});
         }
         const joinDate = new Date();
         const rentDueDate = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 1);
 
-        const password = randomstring.generate({length: 4, charset: "abc"});
+        const password = randomstring.generate({length: 6, charset: "abc"});
 
         const tenantInfo = {name, email, password, phoneNumber};
 
@@ -75,7 +71,7 @@ export class OwnerController {
                 }
             });
             const propertyWithTenant = await propertyDoc?.save();
-            res.status(200).json({password, msg: "tenant added successfully"});
+            res.status(200).json({password, msg: "Tenant added successfully"});
         } catch (error) {
             return res.status(400).json({err: handleDbError(error)});
         }
@@ -83,17 +79,19 @@ export class OwnerController {
 
     getAllOwnerBuildings = (req: any, res: any) => {
         const {ownerId} = req.body;
-        if (!isValidObjectId(ownerId)) {
-            return res.status(400).json({err: "objectId not correct"});
-        }
+        if (!ownerId || !isValidObjectId(ownerId)) {
+            return res.status(400).json({err: "Incorrect owner detail"});
+        } 
         if (req.user) {
             Property.findOne({ownerId})
-                .populate("buildings") // key to populate
-                .then((user) => {
+            .populate({
+                path: "buildings.rooms.tenants.personId", 
+               
+             }) .then((user) => {
                     return res.json(user);
                 });
         } else {
-            res.status(400).json({err: "invalid user"});
+            res.status(400).json({err: "Invalid user"});
         }
     };
 }

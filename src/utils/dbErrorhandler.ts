@@ -1,4 +1,5 @@
-const _ = require("lodash");
+//const _ = require("lodash");
+import _ from "lodash";
 
 export interface ErrorMessage {
     name?: string;
@@ -17,8 +18,8 @@ const handleDbError = (err: any): any => {
 };
 
 export const isEmptyFields = (obj: any) => {
-    const objValues = Object.keys(obj);
-    if (_.includes(objValues, "") || _.includes(objValues, null)) {
+    const objValues = Object.values(obj);
+    if (_.includes(objValues, "") || _.includes(objValues, null) || _.includes(objValues,undefined)) {
         return true;
     } else {
         return false;

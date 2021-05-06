@@ -5,6 +5,7 @@ export default async () => {
         .connect(process.env.DATABASE_URI as string, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
+            useCreateIndex: true,
             useFindAndModify: false,
         })
         .then(() => {

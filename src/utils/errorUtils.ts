@@ -8,7 +8,7 @@ export interface ErrorMessage {
     path: string;
 }
 
-export const handleDbError = (err: any): any => {
+export const formatDbError = (err: any): any => {
     if (err.errors) {
         const errMessage: ErrorMessage = <ErrorMessage>Object.values(err.errors)[0];
         return errMessage.message;

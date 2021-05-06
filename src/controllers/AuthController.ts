@@ -3,7 +3,7 @@ import getJwtToken, {verifyRefreshToken} from "../utils/token";
 import User from "../models/user/User";
 import {IUser} from "../models/user/interface";
 import {sendOTP, verifyOTP} from "../utils/phoneNumberVerification";
-import {handleDbError, isEmptyFields} from "../utils/errorUtils";
+import {formatDbError, isEmptyFields} from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
 import validator from "validator";
 import bcrypt from "bcrypt";
@@ -30,7 +30,7 @@ export class AuthController {
 
             return res.status(200).json({user, accessToken});
         } catch (error) {
-            return res.status(400).json({err: handleDbError(error)});
+            return res.status(400).json({err: formatDbError(error)});
         }
     };
 
@@ -60,18 +60,16 @@ export class AuthController {
                 accessToken: accessToken,
             });
         } catch (error: any) {
-            return res.status(400).json({err: handleDbError(error)});
+            return res.status(400).json({err: formatDbError(error)});
         }
     };
 
     handleRefreshToken = async (req: any, res: any) => {
         const {refreshToken} = req.body;
-        if (refreshToken.length == 0) {
-            return res.status(400).json({err: "All fields are mandatory!"});
+        if (!refreshToken.length) {
+            return res.status(400).json({err: "Refresh token is  mandatory!"});
         }
         try {
-            if (!refreshToken) throw Error("Refresh token error");
-
             // verifyrefresh token method verify token and give us the payload inside it
             const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 

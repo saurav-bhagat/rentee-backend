@@ -3,7 +3,7 @@ import {isValidObjectId} from "mongoose";
 import {IProperty} from "../models/property/interface";
 import Property from "../models/property/property";
 import User from "../models/user/User";
-import {handleDbError, isEmptyFields} from "../utils/errorUtils";
+import {formatDbError, isEmptyFields} from "../utils/errorUtils";
 import randomstring from "randomstring";
 
 export class OwnerController {
@@ -25,7 +25,7 @@ export class OwnerController {
             const propertyDoc = await property.save();
             return res.status(200).json({propertyDoc, msg: "All details of property added succesfully"});
         } catch (error) {
-            return res.status(400).json({err: handleDbError(error)});
+            return res.status(400).json({err: formatDbError(error)});
         }
     };
 
@@ -73,7 +73,7 @@ export class OwnerController {
             const propertyWithTenant = await propertyDoc?.save();
             res.status(200).json({password, msg: "Tenant added successfully"});
         } catch (error) {
-            return res.status(400).json({err: handleDbError(error)});
+            return res.status(400).json({err: formatDbError(error)});
         }
     };
 

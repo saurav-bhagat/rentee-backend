@@ -39,6 +39,9 @@ const userSchema = new Schema(
         refreshToken: {
             type: String,
         },
+        ownerId: {type: Schema.Types.ObjectId, unique: true},
+        roomId: {type: Schema.Types.ObjectId, unique: true},
+        buildId: {type: Schema.Types.ObjectId, unique: true},
     },
     {timestamps: true}
 );

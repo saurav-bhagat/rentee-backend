@@ -47,18 +47,18 @@ export class OwnerController {
             return res.status(400).json({err: "Room can't find"});
         }
         const joinDate = new Date();
-        const rentDueDate = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 1);
-
+        let nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+        const rentDueDate = nextMonthDate.toString();
         const password = randomstring.generate({length: 6, charset: "abc"});
 
-        const tenantInfo = {name, email, password, phoneNumber};
+        const tenantInfo = {name, email, password, phoneNumber, roomId, buildId, ownerId};
 
         try {
             const tenandDoc = await User.create(tenantInfo);
 
             const personId = tenandDoc._id;
             const tenantObj = {personId, joinDate, rentDueDate, securityAmount};
-
+            console.log("tenant obj before push ", tenantObj);
             const propertyDoc = await Property.findOne({ownerId});
 
             propertyDoc?.buildings.forEach((building) => {

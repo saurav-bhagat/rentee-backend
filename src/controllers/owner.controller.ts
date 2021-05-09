@@ -14,7 +14,7 @@ export class OwnerController {
     // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildings} = req.body;
-        if (!ownerId || !isValidObjectId(ownerId)) {
+        if (!ownerId || !isValidObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (buildings === undefined || buildings.length === 0) {
@@ -78,7 +78,7 @@ export class OwnerController {
     // owner dashboard details
     getAllOwnerBuildings = (req: any, res: any) => {
         const {ownerId} = req.body;
-        if (!ownerId || !isValidObjectId(ownerId)) {
+        if (!ownerId || !isValidObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (req.user) {

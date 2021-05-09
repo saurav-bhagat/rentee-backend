@@ -22,6 +22,7 @@ interface tenantObj {
 }
 
 export class TenantController {
+    // Password update on first login
     updateTenantPassword = async (req: any, res: Response) => {
         const {email, password} = req.body;
 
@@ -42,36 +43,34 @@ export class TenantController {
                 if (updatedUser) {
                     return res.status(200).json({msg: "Password updated successfully"});
                 }
-                return res.status(400).json({errr: "Failed to update"});
+                return res.status(400).json({err: "Failed to update"});
             }
             return res.status(400).json({err: "Tenant does not exit"});
         } else {
-            return res.status(400).json({err: "Invalid user"});
+            return res.status(403).json({err: "Invalid user"});
         }
     };
 
+    // Tenant dashboard details
+    //modify the query to filter the building too
     tenantInfo = async (req: any, res: any) => {
-        //tenantId id of tenant
         const {buildId, ownerId, roomId, tenantId, name} = req.body;
-        if (
-            !verifyObjectId(buildId) ||
-            !verifyObjectId(ownerId) ||
-            !verifyObjectId(roomId) ||
-            !verifyObjectId(tenantId)
-        ) {
+
+        if (!verifyObjectId([buildId, ownerId, roomId, tenantId])) {
             res.status(400).json({err: "Either owner/building/room/tenant not valid"});
         }
+
         if (req.user) {
-            const propertyDoc = await Property.findOne({ownerId});
-            const onwerDet = await User.findOne({ownerId});
-            const result: tenantObj = {};
+            const propertyDocument = await Property.findOne({ownerId});
+            const ownerDetails = await User.findOne({ownerId});
+            let result: tenantObj = {};
             result.tenantName = name;
-            if (onwerDet) {
-                result.ownerName = onwerDet.name;
-                result.ownerPhone = onwerDet.phoneNumber;
-                result.ownerEmail = onwerDet.email;
-                if (propertyDoc) {
-                    propertyDoc.buildings.forEach((building) => {
+            if (ownerDetails) {
+                result.ownerName = ownerDetails.name;
+                result.ownerPhone = ownerDetails.phoneNumber;
+                result.ownerEmail = ownerDetails.email;
+                if (propertyDocument) {
+                    propertyDocument.buildings.forEach((building) => {
                         if (building._id == buildId) {
                             building.rooms.forEach((room) => {
                                 if (room._id == roomId) {
@@ -91,7 +90,7 @@ export class TenantController {
                             });
                         }
                     });
-                    res.status(200).json({result, msg: "successfully fetech tennan"});
+                    res.status(200).json({result, msg: "successfully fetch tenant"});
                 } else {
                     res.status(400).json({err: "Owner not found"});
                 }
@@ -99,7 +98,7 @@ export class TenantController {
                 res.status(400).json({err: "Owner not found"});
             }
         } else {
-            res.status(400).json({err: "Invalid user"});
+            res.status(403).json({err: "Invalid user"});
         }
     };
 }

@@ -11,6 +11,7 @@ export class OwnerController {
         res.status(200).send("pong");
     };
 
+    // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildings} = req.body;
         if (!ownerId || !isValidObjectId(ownerId)) {
@@ -29,6 +30,7 @@ export class OwnerController {
         }
     };
 
+    // owner add tenant to tenant array
     tenantRegistration = async (req: any, res: any) => {
         let {name, email, phoneNumber, securityAmount, ownerId, buildId, roomId} = req.body;
 
@@ -37,15 +39,11 @@ export class OwnerController {
         if (isEmptyFields(tenantDetails)) {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
-        if (!isValidObjectId(ownerId)) {
-            return res.status(400).json({err: "Incorrect owner detail"});
+
+        if (!isValidObjectId([ownerId, buildId, roomId])) {
+            return res.status(400).json({err: "Either onwer/building/room  detail incorrect"});
         }
-        if (!isValidObjectId(buildId)) {
-            return res.status(400).json({err: "Building can't find"});
-        }
-        if (!isValidObjectId(roomId)) {
-            return res.status(400).json({err: "Room can't find"});
-        }
+
         const joinDate = new Date();
         let nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
         const rentDueDate = nextMonthDate.toString();
@@ -77,6 +75,7 @@ export class OwnerController {
         }
     };
 
+    // owner dashboard details
     getAllOwnerBuildings = (req: any, res: any) => {
         const {ownerId} = req.body;
         if (!ownerId || !isValidObjectId(ownerId)) {

@@ -25,10 +25,13 @@ export const isEmptyFields = (obj: any) => {
     }
 };
 
-export const verifyObjectId = (id: string) => {
-    if (id.match(/^[0-9a-fA-F]{24}$/)) {
-        return true;
-    } else {
-        false;
-    }
+export const verifyObjectId = (obj: any) => {
+    let result = true;
+    const ids = [...obj];
+    ids.forEach((id) => {
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            result = false;
+        }
+    });
+    return result;
 };

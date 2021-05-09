@@ -10,6 +10,10 @@ const ownerController: OwnerController = new OwnerController();
 //endpoints for owner
 router.get("/ping", ownerController.pong);
 
-router.post("/send-details", ownerController.sendDetails);
+router.post("/property-details", ownerController.addOwnerProperty);
+
+router.post("/register-tenant", ownerController.tenantRegistration);
+
+router.post("/properties", ownerController.getAllOwnerBuildings);
 
 export default router;

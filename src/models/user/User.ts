@@ -2,6 +2,7 @@ import {Schema, model, Document, Model} from "mongoose";
 import validator from "validator";
 import bcrypt from "bcrypt";
 import uniqueValidator from "mongoose-unique-validator";
+import {IUser, IModel} from "./interface";
 
 const userSchema = new Schema(
     {
@@ -29,6 +30,7 @@ const userSchema = new Schema(
         },
         isOwner: {
             type: Boolean,
+            default: false,
         },
         resetLink: {
             type: String,
@@ -37,6 +39,9 @@ const userSchema = new Schema(
         refreshToken: {
             type: String,
         },
+        ownerId: {type: Schema.Types.ObjectId, unique: true},
+        roomId: {type: Schema.Types.ObjectId, unique: true},
+        buildId: {type: Schema.Types.ObjectId, unique: true},
     },
     {timestamps: true}
 );
@@ -63,17 +68,6 @@ userSchema.statics.login = async function (email: string, password: string) {
     }
 };
 
-export interface IUser extends Document {
-    _id: Schema.Types.ObjectId;
-    name: string;
-    email: string;
-    password: string;
-    phoneNumber: string;
-    isOwner: boolean;
-    resetLink: string;
-    refreshToken: string;
-}
-
 userSchema.statics.addRefreshToken = async function (id: string, refreshToken: string) {
     const response = await this.findByIdAndUpdate(id, {refreshToken, resetLink: ""}, {new: true}, (err, user) => {
         if (err) {
@@ -95,13 +89,7 @@ userSchema.statics.findUserForRefreshToken = async function (id: string, refresh
     }
 };
 
-interface basicUserModel extends Model<IUser> {
-    login: (email: Schema.Types.ObjectId, password: string) => IUser;
-    addRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => object;
-    findUserForRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => IUser;
-}
-
-const User = model<IUser, basicUserModel>("user", userSchema);
+const User = model<IUser, IModel>("user", userSchema);
 
 userSchema.plugin(uniqueValidator, {message: "{PATH} already exist"});
 

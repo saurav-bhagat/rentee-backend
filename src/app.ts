@@ -5,7 +5,6 @@ dotenv.config({path: path.resolve(__dirname, "../.env")});
 import express from "express";
 import db from "./config/db";
 import routes from "./routes";
-import isAuth from "./middleware/is-auth";
 
 const app = express();
 
@@ -17,7 +16,6 @@ db();
 // middleware
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
-app.use(isAuth);
 
 app.use(routes);
 

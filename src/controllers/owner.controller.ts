@@ -11,9 +11,10 @@ export class OwnerController {
         res.status(200).send("pong");
     };
 
+    // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildings} = req.body;
-        if (!ownerId || !isValidObjectId(ownerId)) {
+        if (!ownerId || !isValidObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (buildings === undefined || buildings.length === 0) {
@@ -29,6 +30,7 @@ export class OwnerController {
         }
     };
 
+    // owner add tenant to tenant array
     tenantRegistration = async (req: any, res: any) => {
         let {name, email, phoneNumber, securityAmount, ownerId, buildId, roomId} = req.body;
 
@@ -37,28 +39,24 @@ export class OwnerController {
         if (isEmptyFields(tenantDetails)) {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
-        if (!isValidObjectId(ownerId)) {
-            return res.status(400).json({err: "Incorrect owner detail"});
-        }
-        if (!isValidObjectId(buildId)) {
-            return res.status(400).json({err: "Building can't find"});
-        }
-        if (!isValidObjectId(roomId)) {
-            return res.status(400).json({err: "Room can't find"});
-        }
-        const joinDate = new Date();
-        const rentDueDate = new Date(joinDate.getFullYear(), joinDate.getMonth() + 1, 1);
 
+        if (!isValidObjectId([ownerId, buildId, roomId])) {
+            return res.status(400).json({err: "Either onwer/building/room  detail incorrect"});
+        }
+
+        const joinDate = new Date();
+        let nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+        const rentDueDate = nextMonthDate.toString();
         const password = randomstring.generate({length: 6, charset: "abc"});
 
-        const tenantInfo = {name, email, password, phoneNumber};
+        const tenantInfo = {name, email, password, phoneNumber, roomId, buildId, ownerId};
 
         try {
             const tenandDoc = await User.create(tenantInfo);
 
             const personId = tenandDoc._id;
             const tenantObj = {personId, joinDate, rentDueDate, securityAmount};
-
+            console.log("tenant obj before push ", tenantObj);
             const propertyDoc = await Property.findOne({ownerId});
 
             propertyDoc?.buildings.forEach((building) => {
@@ -77,9 +75,10 @@ export class OwnerController {
         }
     };
 
+    // owner dashboard details
     getAllOwnerBuildings = (req: any, res: any) => {
         const {ownerId} = req.body;
-        if (!ownerId || !isValidObjectId(ownerId)) {
+        if (!ownerId || !isValidObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (req.user) {

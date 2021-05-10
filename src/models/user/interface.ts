@@ -9,6 +9,9 @@ export interface IUser extends Document {
     isOwner: boolean;
     resetLink: string;
     refreshToken: string;
+    ownerId: Schema.Types.ObjectId;
+    roomId: Schema.Types.ObjectId;
+    buildId: Schema.Types.ObjectId;
 }
 
 export interface IModel extends Model<IUser> {

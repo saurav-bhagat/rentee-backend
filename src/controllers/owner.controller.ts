@@ -50,15 +50,14 @@ export class OwnerController {
         const rentDueDate = nextMonthDate.toString();
         const password = randomstring.generate({length: 6, charset: "abc"});
 
-        const userInfo = {name, email, password, phoneNumber, roomId, buildId, ownerId};
+        const userInfo = {name, email, password, phoneNumber};
 
         try {
-            // creating a user. A user can be a tenant or a mainter
+            // Creating a user as a  tenant
             const userDoc = await User.create(userInfo);
-            const personId = userDoc._id;
-            const tenantInfo = {personId, joinDate, rentDueDate, securityAmount};
+            const userId = userDoc._id;
+            const tenantInfo = {userId, joinDate, rentDueDate, securityAmount, roomId, buildId, ownerId};
 
-            // user(which is either a tenant or mainer ) with his info
             const tenantDoc = await Tenant.create(tenantInfo);
 
             const tenantId = tenantDoc._id;
@@ -90,7 +89,7 @@ export class OwnerController {
                 .populate({
                     path: "buildings.rooms.tenants.tenantId",
                     populate: {
-                        path: "personId", // in blogs, populate comments
+                        path: "userId",
                     },
                 })
                 .then((user) => {

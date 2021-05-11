@@ -2,10 +2,13 @@ import {Schema, model} from "mongoose";
 import {ITenant} from "./interface";
 
 const tenantSchema = new Schema({
-    personId: {type: Schema.Types.ObjectId, ref: "user"},
+    userId: {type: Schema.Types.ObjectId, ref: "user"},
     joinDate: {type: Date, default: Date.now},
     rentDueDate: Date,
     securityAmount: Number,
+    ownerId: {type: Schema.Types.ObjectId},
+    roomId: {type: Schema.Types.ObjectId},
+    buildId: {type: Schema.Types.ObjectId},
 });
 
 const tenant = model<ITenant>("tenant", tenantSchema);

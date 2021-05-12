@@ -3,10 +3,13 @@ import uniqueValidator from "mongoose-unique-validator";
 import {IProperty} from "./interface";
 import {buildingSchema} from "./subSchema";
 
-const propertySchema = new Schema({
-    ownerId: {type: Schema.Types.ObjectId, ref: "user", unique: true},
-    buildings: [buildingSchema],
-});
+const propertySchema = new Schema(
+    {
+        ownerId: {type: Schema.Types.ObjectId, ref: "user", unique: true},
+        buildings: [buildingSchema],
+    },
+    {timestamps: true}
+);
 
 const property = model<IProperty>("property", propertySchema);
 

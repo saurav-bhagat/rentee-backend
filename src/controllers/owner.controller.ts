@@ -1,10 +1,11 @@
 import {Request, Response} from "express";
-import {isValidObjectId} from "mongoose";
 import {IProperty} from "../models/property/interface";
 import Property from "../models/property/property";
 import User from "../models/user/User";
+import Tenant from "../models/tenant/tenant";
 import {formatDbError, isEmptyFields} from "../utils/errorUtils";
 import randomstring from "randomstring";
+import {verifyObjectId} from "../utils/errorUtils";
 
 export class OwnerController {
     pong = (req: Request, res: Response) => {
@@ -14,7 +15,7 @@ export class OwnerController {
     // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildings} = req.body;
-        if (!ownerId || !isValidObjectId([ownerId])) {
+        if (!ownerId || !verifyObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (buildings === undefined || buildings.length === 0) {
@@ -40,7 +41,7 @@ export class OwnerController {
             return res.status(400).json({err: "All fields are mandatory!"});
         }
 
-        if (!isValidObjectId([ownerId, buildId, roomId])) {
+        if (!verifyObjectId([ownerId, buildId, roomId])) {
             return res.status(400).json({err: "Either onwer/building/room  detail incorrect"});
         }
 
@@ -49,21 +50,23 @@ export class OwnerController {
         const rentDueDate = nextMonthDate.toString();
         const password = randomstring.generate({length: 6, charset: "abc"});
 
-        const tenantInfo = {name, email, password, phoneNumber, roomId, buildId, ownerId};
+        const userInfo = {name, email, password, phoneNumber};
 
         try {
-            const tenandDoc = await User.create(tenantInfo);
+            // Creating a user as a  tenant
+            const userDoc = await User.create(userInfo);
+            const userId = userDoc._id;
+            const tenantInfo = {userId, joinDate, rentDueDate, securityAmount, roomId, buildId, ownerId};
 
-            const personId = tenandDoc._id;
-            const tenantObj = {personId, joinDate, rentDueDate, securityAmount};
-            console.log("tenant obj before push ", tenantObj);
+            const tenantDoc = await Tenant.create(tenantInfo);
+
+            const tenantId = tenantDoc._id;
             const propertyDoc = await Property.findOne({ownerId});
-
             propertyDoc?.buildings.forEach((building) => {
                 if (building._id == buildId) {
                     building.rooms.forEach((room) => {
                         if (room._id == roomId) {
-                            room.tenants.push(tenantObj);
+                            room.tenants.push({tenantId});
                         }
                     });
                 }
@@ -78,19 +81,22 @@ export class OwnerController {
     // owner dashboard details
     getAllOwnerBuildings = (req: any, res: any) => {
         const {ownerId} = req.body;
-        if (!ownerId || !isValidObjectId([ownerId])) {
+        if (!ownerId || !verifyObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
         if (req.user) {
             Property.findOne({ownerId})
                 .populate({
-                    path: "buildings.rooms.tenants.personId",
+                    path: "buildings.rooms.tenants.tenantId",
+                    populate: {
+                        path: "userId",
+                    },
                 })
                 .then((user) => {
                     return res.json(user);
                 });
         } else {
-            res.status(400).json({err: "Invalid user"});
+            res.status(403).json({err: "Invalid user"});
         }
     };
 }

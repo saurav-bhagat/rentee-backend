@@ -1,5 +1,5 @@
 import {Request, Response} from "express";
-import {IProperty} from "../models/property/interface";
+import Room from "../models/property/rooms";
 import Property from "../models/property/property";
 import User from "../models/user/User";
 import Tenant from "../models/tenant/tenant";
@@ -14,18 +14,42 @@ export class OwnerController {
 
     // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
-        const {ownerId, buildings} = req.body;
+        const {ownerId, buildingsObj} = req.body;
         if (!ownerId || !verifyObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
-        if (buildings === undefined || buildings.length === 0) {
+        if (buildingsObj === undefined || buildingsObj.length === 0) {
             return res.status(400).json({err: "Atleast one building present"});
         }
-        const propertyDetails = <IProperty>{ownerId, buildings};
+
+        const property = new Property({ownerId});
+
+        // Note : Don't you dare to change for loop to forEach
+        // because it take me hours to find that this will work only in
+        // for loop not forEach because forEach call an function when we use await in
+        // for each then we did'nt get the desired result
         try {
-            const property = new Property(propertyDetails);
-            const propertyDoc = await property.save();
-            return res.status(200).json({propertyDoc, msg: "All details of property added succesfully"});
+            for (let i = 0; i < buildingsObj.length; i += 1) {
+                let tempRooms: Array<Object> = [];
+                let building = buildingsObj[i];
+                const {name: buildingName, address: buildingAddress} = building;
+
+                for (let j = 0; j < building.rooms.length; j += 1) {
+                    let room = building.rooms[j];
+                    const {rent, type, floor, roomNo} = room;
+                    const roomInfo = {rent, type, floor, roomNo};
+                    const roomDocument = await Room.create(roomInfo);
+                    const roomId = roomDocument._id;
+                    tempRooms.push({roomId});
+                }
+                property.buildings.push({
+                    name: buildingName,
+                    address: buildingAddress,
+                    rooms: tempRooms,
+                });
+            }
+            let properties = await property.save();
+            return res.status(200).json({properties});
         } catch (error) {
             return res.status(400).json({err: formatDbError(error)});
         }
@@ -65,7 +89,7 @@ export class OwnerController {
             propertyDoc?.buildings.forEach((building) => {
                 if (building._id == buildId) {
                     building.rooms.forEach((room) => {
-                        if (room._id == roomId) {
+                        if (room.roomId == roomId) {
                             room.tenants.push({tenantId});
                         }
                     });
@@ -86,14 +110,17 @@ export class OwnerController {
         }
         if (req.user) {
             Property.findOne({ownerId})
-                .populate({
-                    path: "buildings.rooms.tenants.tenantId",
-                    populate: {
-                        path: "userId",
+                .populate([
+                    {path: "buildings.rooms.roomId"},
+                    {
+                        path: "buildings.rooms.tenants.tenantId",
+                        populate: {
+                            path: "userId",
+                        },
                     },
-                })
-                .then((user) => {
-                    return res.json(user);
+                ])
+                .then((data) => {
+                    return res.status(200).json({ownerBuildingDetails: data});
                 });
         } else {
             res.status(403).json({err: "Invalid user"});

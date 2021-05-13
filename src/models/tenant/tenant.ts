@@ -5,7 +5,7 @@ const tenantSchema = new Schema(
     {
         userId: {type: Schema.Types.ObjectId, ref: "user"},
         joinDate: {type: Date, default: Date.now},
-        rentDueDate: Date,
+        rentDueDate: String,
         securityAmount: Number,
         ownerId: {type: Schema.Types.ObjectId},
         roomId: {type: Schema.Types.ObjectId},

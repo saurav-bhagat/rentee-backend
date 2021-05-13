@@ -13,13 +13,13 @@ export interface IRooms extends Document {
     floor: String;
     roomNo: Number;
     isEmpty: Boolean;
+    tenants: mongoose.Types.Array<ITenantInBuilding>;
 }
 
 // This is type of room which is present in building
 export interface IRoomsInBuilding extends Document {
     _id: Schema.Types.ObjectId;
     roomId: Schema.Types.ObjectId;
-    tenants: mongoose.Types.Array<ITenantInBuilding>;
 }
 
 export interface IBuilding extends Document {

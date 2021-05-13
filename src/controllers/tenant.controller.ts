@@ -1,12 +1,14 @@
 import {Request, Response} from "express";
 import validator from "validator";
+
 import User from "../models/user/User";
 import Room from "../models/property/rooms";
+
 import Property from "../models/property/property";
 import Tenant from "../models/tenant/tenant";
+
 import bcrypt from "bcrypt";
 import {verifyObjectId} from "../utils/errorUtils";
-import {IRooms} from "../models/property/interface";
 
 interface tenantObj {
     tenantEmail?: String;
@@ -17,7 +19,7 @@ interface tenantObj {
     rent?: Number;
     floor?: String;
     joinDate?: Date;
-    rentDueDate?: Date;
+    rentDueDate?: String;
     security?: Number;
     buildingName?: String;
     buildingAddress?: String;
@@ -64,7 +66,7 @@ export class TenantController {
         if (!verifyObjectId([userId])) {
             res.status(400).json({err: "UserId not valid"});
         }
-        if (req.user) {
+        if (true) {
             // finding a tenant with userId
             const tenantDocument = await Tenant.findOne({userId});
 
@@ -80,6 +82,7 @@ export class TenantController {
                 } = tenantDocument;
 
                 const ownerDocument = await User.findOne({_id: ownerId});
+
                 if (ownerDocument) {
                     const {name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber} = ownerDocument;
 
@@ -94,25 +97,30 @@ export class TenantController {
                                 const {name: buildingName, address: buildingAddress} = building;
 
                                 const roomDocument = await Room.findOne({_id: roomId});
-                                const {rent, type: roomType, floor, roomNo: roomNumber} = <IRooms>roomDocument;
 
-                                result = {
-                                    tenantEmail,
-                                    tenantName,
-                                    tenantPhoneNumber,
-                                    roomNumber,
-                                    roomType,
-                                    rent,
-                                    floor,
-                                    joinDate,
-                                    rentDueDate,
-                                    security,
-                                    buildingName,
-                                    buildingAddress,
-                                    ownerName,
-                                    ownerEmail,
-                                    ownerPhoneNumber,
-                                };
+                                if (roomDocument) {
+                                    const {rent, type: roomType, floor, roomNo: roomNumber} = roomDocument;
+
+                                    result = {
+                                        tenantEmail,
+                                        tenantName,
+                                        tenantPhoneNumber,
+                                        roomNumber,
+                                        roomType,
+                                        rent,
+                                        floor,
+                                        joinDate,
+                                        rentDueDate,
+                                        security,
+                                        buildingName,
+                                        buildingAddress,
+                                        ownerName,
+                                        ownerEmail,
+                                        ownerPhoneNumber,
+                                    };
+                                } else {
+                                    return res.status(400).json({error: "Room not found"});
+                                }
                             }
                         }
 

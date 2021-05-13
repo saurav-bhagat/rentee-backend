@@ -1,9 +1,12 @@
 import {Request, Response} from "express";
 import Room from "../models/property/rooms";
+
 import Property from "../models/property/property";
 import User from "../models/user/User";
+
 import Tenant from "../models/tenant/tenant";
 import {formatDbError, isEmptyFields} from "../utils/errorUtils";
+
 import randomstring from "randomstring";
 import {verifyObjectId} from "../utils/errorUtils";
 
@@ -15,9 +18,11 @@ export class OwnerController {
     // owner add properties after signup
     addOwnerProperty = async (req: any, res: any) => {
         const {ownerId, buildingsObj} = req.body;
+
         if (!ownerId || !verifyObjectId([ownerId])) {
             return res.status(400).json({err: "Incorrect owner detail"});
         }
+
         if (buildingsObj === undefined || buildingsObj.length === 0) {
             return res.status(400).json({err: "Atleast one building present"});
         }
@@ -28,6 +33,7 @@ export class OwnerController {
         // because it take me hours to find that this will work only in
         // for loop not forEach because forEach call an function when we use await in
         // for each then we did'nt get the desired result
+
         try {
             for (let i = 0; i < buildingsObj.length; i += 1) {
                 let tempRooms: Array<Object> = [];
@@ -59,7 +65,15 @@ export class OwnerController {
     tenantRegistration = async (req: any, res: any) => {
         let {name, email, phoneNumber, securityAmount, ownerId, buildId, roomId} = req.body;
 
-        const tenantDetails = {name, email, phoneNumber, securityAmount, ownerId, buildId, roomId};
+        const tenantDetails = {
+            name,
+            email,
+            phoneNumber,
+            securityAmount,
+            ownerId,
+            buildId,
+            roomId,
+        };
 
         if (isEmptyFields(tenantDetails)) {
             return res.status(400).json({err: "All fields are mandatory!"});
@@ -69,36 +83,61 @@ export class OwnerController {
             return res.status(400).json({err: "Either onwer/building/room  detail incorrect"});
         }
 
-        const joinDate = new Date();
-        let nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-        const rentDueDate = nextMonthDate.toString();
-        const password = randomstring.generate({length: 6, charset: "abc"});
+        const propertyDoc = await Property.findOne({ownerId});
 
-        const userInfo = {name, email, password, phoneNumber};
+        if (propertyDoc) {
+            const password = randomstring.generate({length: 6, charset: "abc"});
 
-        try {
-            // Creating a user as a  tenant
-            const userDoc = await User.create(userInfo);
-            const userId = userDoc._id;
-            const tenantInfo = {userId, joinDate, rentDueDate, securityAmount, roomId, buildId, ownerId};
+            const userInfo = {
+                name,
+                email,
+                password,
+                phoneNumber,
+            };
 
-            const tenantDoc = await Tenant.create(tenantInfo);
+            try {
+                // Creating a user as a  tenant
+                const userDoc = await User.create(userInfo);
+                const userId = userDoc._id;
 
-            const tenantId = tenantDoc._id;
-            const propertyDoc = await Property.findOne({ownerId});
-            propertyDoc?.buildings.forEach((building) => {
-                if (building._id == buildId) {
-                    building.rooms.forEach((room) => {
-                        if (room.roomId == roomId) {
-                            room.tenants.push({tenantId});
+                const joinDate = new Date();
+                let nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+                //keep consistent date format
+                const rentDueDate = nextMonthDate.toString();
+
+                const tenantInfo = {
+                    userId,
+                    joinDate,
+                    rentDueDate,
+                    securityAmount,
+                    roomId,
+                    buildId,
+                    ownerId,
+                };
+
+                const tenantDoc = await Tenant.create(tenantInfo);
+                const tenantId = tenantDoc._id;
+
+                for (let i = 0; i < propertyDoc.buildings.length; i += 1) {
+                    let building = propertyDoc.buildings[i];
+
+                    if (building._id == buildId) {
+                        const roomDocument = await Room.findOne({_id: roomId});
+
+                        if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
+                            roomDocument.tenants.push({tenantId});
+                            const result = await roomDocument.save();
+                            res.status(200).json({password, msg: "Tenant added successfully"});
+                        } else {
+                            return res.status(400).json({error: "Room not found!"});
                         }
-                    });
+                    }
                 }
-            });
-            const propertyWithTenant = await propertyDoc?.save();
-            res.status(200).json({password, msg: "Tenant added successfully"});
-        } catch (error) {
-            return res.status(400).json({err: formatDbError(error)});
+            } catch (error) {
+                return res.status(400).json({err: formatDbError(error)});
+            }
+        } else {
+            return res.status(400).json({error: "Onwer not found"});
         }
     };
 
@@ -110,15 +149,15 @@ export class OwnerController {
         }
         if (req.user) {
             Property.findOne({ownerId})
-                .populate([
-                    {path: "buildings.rooms.roomId"},
-                    {
-                        path: "buildings.rooms.tenants.tenantId",
+                .populate({
+                    path: "buildings.rooms.roomId",
+                    populate: {
+                        path: "tenants.tenantId",
                         populate: {
                             path: "userId",
                         },
                     },
-                ])
+                })
                 .then((data) => {
                     return res.status(200).json({ownerBuildingDetails: data});
                 });

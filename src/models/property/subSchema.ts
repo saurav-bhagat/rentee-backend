@@ -6,7 +6,6 @@ export const buildingSchema = new Schema({
     rooms: [
         {
             roomId: {type: Schema.Types.ObjectId, ref: "room"},
-            tenants: [{tenantId: {type: Schema.Types.ObjectId, ref: "tenant"}}],
         },
     ],
 });

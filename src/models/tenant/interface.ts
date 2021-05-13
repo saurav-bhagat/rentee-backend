@@ -4,7 +4,7 @@ export interface ITenant extends Document {
     _id: Schema.Types.ObjectId;
     userId: Schema.Types.ObjectId;
     joinDate: Date;
-    rentDueDate: Date;
+    rentDueDate: String;
     securityAmount: Number;
     ownerId: Schema.Types.ObjectId;
     roomId: Schema.Types.ObjectId;

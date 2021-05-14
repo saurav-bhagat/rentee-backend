@@ -1,5 +1,4 @@
 import mongoose, {Schema, Document} from "mongoose";
-import {ITenant} from "../tenant/interface";
 
 export interface IRooms extends Document {
     _id: Schema.Types.ObjectId;
@@ -8,14 +7,14 @@ export interface IRooms extends Document {
     floor: String;
     roomNo: Number;
     isEmpty: Boolean;
-    tenants: mongoose.Types.Array<ITenant>;
+    tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IBuilding extends Document {
     _id: Schema.Types.ObjectId;
     name: String;
     address: String;
-    rooms: mongoose.Types.Array<IRooms>;
+    rooms: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IProperty extends Document {

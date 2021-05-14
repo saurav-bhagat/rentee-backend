@@ -59,14 +59,13 @@ export class TenantController {
     };
 
     // Tenant dashboard details
-    //modify the query to filter the building too
     tenantInfo = async (req: any, res: any) => {
         const {userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber} = req.body;
 
         if (!verifyObjectId([userId])) {
             res.status(400).json({err: "UserId not valid"});
         }
-        if (true) {
+        if (req.user) {
             // finding a tenant with userId
             const tenantDocument = await Tenant.findOne({userId});
 

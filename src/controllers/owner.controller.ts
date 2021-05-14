@@ -46,7 +46,7 @@ export class OwnerController {
                     const roomInfo = {rent, type, floor, roomNo};
                     const roomDocument = await Room.create(roomInfo);
                     const roomId = roomDocument._id;
-                    tempRooms.push({roomId});
+                    tempRooms.push(roomId);
                 }
                 property.buildings.push({
                     name: buildingName,
@@ -125,7 +125,7 @@ export class OwnerController {
                         const roomDocument = await Room.findOne({_id: roomId});
 
                         if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
-                            roomDocument.tenants.push({tenantId});
+                            roomDocument.tenants.push(tenantId);
                             const result = await roomDocument.save();
                             res.status(200).json({password, msg: "Tenant added successfully"});
                         } else {
@@ -150,9 +150,9 @@ export class OwnerController {
         if (req.user) {
             Property.findOne({ownerId})
                 .populate({
-                    path: "buildings.rooms.roomId",
+                    path: "buildings.rooms",
                     populate: {
-                        path: "tenants.tenantId",
+                        path: "tenants",
                         populate: {
                             path: "userId",
                         },

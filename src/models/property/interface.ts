@@ -1,11 +1,5 @@
 import mongoose, {Schema, Document} from "mongoose";
 
-// This the type of tenant which is present in building
-export interface ITenantInBuilding extends Document {
-    _id: Schema.Types.ObjectId;
-    tenantId: Schema.Types.ObjectId;
-}
-
 export interface IRooms extends Document {
     _id: Schema.Types.ObjectId;
     rent: Number;
@@ -13,20 +7,14 @@ export interface IRooms extends Document {
     floor: String;
     roomNo: Number;
     isEmpty: Boolean;
-    tenants: mongoose.Types.Array<ITenantInBuilding>;
-}
-
-// This is type of room which is present in building
-export interface IRoomsInBuilding extends Document {
-    _id: Schema.Types.ObjectId;
-    roomId: Schema.Types.ObjectId;
+    tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IBuilding extends Document {
     _id: Schema.Types.ObjectId;
     name: String;
     address: String;
-    rooms: mongoose.Types.Array<IRoomsInBuilding>;
+    rooms: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IProperty extends Document {

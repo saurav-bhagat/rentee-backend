@@ -127,7 +127,7 @@ export class OwnerController {
                         if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
                             roomDocument.tenants.push(tenantId);
                             const result = await roomDocument.save();
-                            res.status(200).json({password, msg: "Tenant added successfully"});
+                            return res.status(200).json({password, msg: "Tenant added successfully"});
                         } else {
                             return res.status(400).json({error: "Room not found!"});
                         }
@@ -162,7 +162,7 @@ export class OwnerController {
                     return res.status(200).json({ownerBuildingDetails: data});
                 });
         } else {
-            res.status(403).json({err: "Invalid user"});
+            return res.status(403).json({err: "Invalid user"});
         }
     };
 }

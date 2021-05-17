@@ -1,6 +1,6 @@
-import {Router} from "express";
+import { Router } from "express";
 //import {AuthController} from "../controllers/AuthController";
-import {OwnerController} from "../controllers/owner.controller";
+import { OwnerController } from "../controllers/owner.controller";
 
 const router: Router = Router();
 

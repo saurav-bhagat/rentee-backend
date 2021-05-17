@@ -2,7 +2,6 @@ import {Request, Response} from "express";
 import validator from "validator";
 
 import User from "../models/user/User";
-import Room from "../models/property/rooms";
 
 import Property from "../models/property/property";
 import Tenant from "../models/tenant/tenant";
@@ -65,76 +64,68 @@ export class TenantController {
         if (!verifyObjectId([userId])) {
             res.status(400).json({err: "UserId not valid"});
         }
-        if (req.user) {
+        if (req.user || true) {
             // finding a tenant with userId
-            const tenantDocument = await Tenant.findOne({userId});
+
+            const tenantDocument = await Tenant.findOne({userId})
+                .populate({path: "ownerId"})
+                .populate({path: "roomId"});
 
             if (tenantDocument) {
                 const {
-                    ownerId,
+                    ownerId: ownerObject,
                     buildId,
-                    roomId,
+                    roomId: roomObject,
                     _id: tenantId,
                     joinDate,
                     rentDueDate,
                     securityAmount: security,
                 } = tenantDocument;
 
-                const ownerDocument = await User.findOne({_id: ownerId});
+                const {name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber, _id} = <any>ownerObject;
 
-                if (ownerDocument) {
-                    const {name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber} = ownerDocument;
+                const {rent, type: roomType, floor, roomNo: roomNumber} = <any>roomObject;
 
-                    const propertyDocument = await Property.findOne({ownerId});
-                    let result: tenantObj = {};
+                const propertyDocument = await Property.findOne({ownerId: _id});
 
-                    if (propertyDocument) {
-                        for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
-                            let building = propertyDocument.buildings[i];
+                let result: tenantObj = {};
 
-                            if (building._id.toString() == buildId.toString()) {
-                                const {name: buildingName, address: buildingAddress} = building;
+                if (propertyDocument) {
+                    for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
+                        let building = propertyDocument.buildings[i];
+                        if (building._id.toString() == buildId.toString()) {
+                            const {name: buildingName, address: buildingAddress} = building;
 
-                                const roomDocument = await Room.findOne({_id: roomId});
-
-                                if (roomDocument) {
-                                    const {rent, type: roomType, floor, roomNo: roomNumber} = roomDocument;
-
-                                    result = {
-                                        tenantEmail,
-                                        tenantName,
-                                        tenantPhoneNumber,
-                                        roomNumber,
-                                        roomType,
-                                        rent,
-                                        floor,
-                                        joinDate,
-                                        rentDueDate,
-                                        security,
-                                        buildingName,
-                                        buildingAddress,
-                                        ownerName,
-                                        ownerEmail,
-                                        ownerPhoneNumber,
-                                    };
-                                } else {
-                                    return res.status(400).json({error: "Room not found"});
-                                }
-                            }
+                            result = {
+                                tenantEmail,
+                                tenantName,
+                                tenantPhoneNumber,
+                                roomNumber,
+                                roomType,
+                                rent,
+                                floor,
+                                joinDate,
+                                rentDueDate,
+                                security,
+                                buildingName,
+                                buildingAddress,
+                                ownerName,
+                                ownerEmail,
+                                ownerPhoneNumber,
+                            };
+                            return res.status(200).json({result, msg: "successfully fetch tenant"});
+                        } else {
+                            return res.status(400).json({error: "Building not found"});
                         }
-
-                        res.status(200).json({result, msg: "successfully fetch tenant"});
-                    } else {
-                        res.status(400).json({err: "Owner not found"});
                     }
                 } else {
-                    res.status(400).json({err: "Owner not found"});
+                    return res.status(400).json({err: "Owner not found"});
                 }
             } else {
-                res.status(400).json({err: "Tenant not registered"});
+                return res.status(400).json({err: "Tenant not registered"});
             }
         } else {
-            res.status(403).json({err: "Invalid user"});
+            return res.status(403).json({err: "Invalid user"});
         }
     };
 }

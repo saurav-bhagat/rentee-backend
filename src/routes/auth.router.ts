@@ -1,5 +1,5 @@
-import {Router} from "express";
-import {AuthController} from "../controllers/AuthController";
+import { Router } from "express";
+import { AuthController } from "../controllers/AuthController";
 import isAuth from "../middleware/is-auth";
 
 const router: Router = Router();
@@ -22,9 +22,9 @@ router.post("/send-sms", authController.sendSms);
 router.post("/verify-sms", authController.verifySms);
 
 router.get("/protected", isAuth, (req: any, res: any) => {
-    console.log(req.user);
-    console.log(req.isAuth);
-    res.send("success");
+	console.log(req.user);
+	console.log(req.isAuth);
+	res.send("success");
 });
 
 export default router;

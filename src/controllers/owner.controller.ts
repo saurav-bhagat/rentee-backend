@@ -16,53 +16,49 @@ export class OwnerController {
 	};
 
 	// owner add properties after signup
-	addOwnerProperty = async (req: any, res: any) => {
-		const { ownerId, buildingsObj } = req.body;
+	addOwnerProperty = async (req: Request, res: Response) => {
+		if (req.isAuth) {
+			const { ownerId, buildingsObj } = req.body;
 
-		if (!ownerId || !verifyObjectId([ownerId])) {
-			return res.status(400).json({ err: "Incorrect owner detail" });
-		}
-
-		if (buildingsObj === undefined || buildingsObj.length === 0) {
-			return res.status(400).json({ err: "Atleast one building present" });
-		}
-
-		const property = new Property({ ownerId });
-
-		// Note : Don't you dare to change for loop to forEach
-		// because it take me hours to find that this will work only in
-		// for loop not forEach because forEach call an function when we use await in
-		// for each then we did'nt get the desired result
-
-		try {
-			for (let i = 0; i < buildingsObj.length; i += 1) {
-				let tempRooms: Array<Object> = [];
-				let building = buildingsObj[i];
-				const { name: buildingName, address: buildingAddress } = building;
-
-				for (let j = 0; j < building.rooms.length; j += 1) {
-					let room = building.rooms[j];
-					const { rent, type, floor, roomNo } = room;
-					const roomInfo = { rent, type, floor, roomNo };
-					const roomDocument = await Room.create(roomInfo);
-					const roomId = roomDocument._id;
-					tempRooms.push(roomId);
-				}
-				property.buildings.push({
-					name: buildingName,
-					address: buildingAddress,
-					rooms: tempRooms,
-				});
+			if (!ownerId || !verifyObjectId([ownerId])) {
+				return res.status(400).json({ err: "Incorrect owner detail" });
 			}
-			let properties = await property.save();
-			return res.status(200).json({ properties });
-		} catch (error) {
-			return res.status(400).json({ err: formatDbError(error) });
+
+			if (buildingsObj === undefined || buildingsObj.length === 0) {
+				return res.status(400).json({ err: "Properties data is missing" });
+			}
+
+			const property = new Property({ ownerId });
+
+			try {
+				for (let i = 0; i < buildingsObj.length; i += 1) {
+					let tempRooms: Array<Object> = [];
+					let building = buildingsObj[i];
+					const { name: buildingName, address: buildingAddress } = building;
+
+					for (let j = 0; j < building.rooms.length; j += 1) {
+						const room = building.rooms[j];
+						const roomDocument = await Room.create(room);
+						tempRooms.push(roomDocument._id);
+					}
+					property.buildings.push({
+						name: buildingName,
+						address: buildingAddress,
+						rooms: tempRooms,
+					});
+				}
+				let properties = await property.save();
+				return res.status(200).json({ properties });
+			} catch (error) {
+				return res.status(400).json({ err: formatDbError(error) });
+			}
+		} else {
+			return res.status(403).json({ err: "Not Authorized" });
 		}
 	};
 
 	// owner add tenant to tenant array
-	tenantRegistration = async (req: any, res: any) => {
+	tenantRegistration = async (req: Request, res: Response) => {
 		let { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId } = req.body;
 
 		const tenantDetails = {
@@ -80,7 +76,7 @@ export class OwnerController {
 		}
 
 		if (!verifyObjectId([ownerId, buildId, roomId])) {
-			return res.status(400).json({ err: "Either onwer/building/room  detail incorrect" });
+			return res.status(400).json({ err: "Incorrect details sent" });
 		}
 
 		const propertyDoc = await Property.findOne({ ownerId });
@@ -96,7 +92,7 @@ export class OwnerController {
 			};
 
 			try {
-				// Creating a user as a  tenant
+				// Creating a tenant User
 				const userDoc = await User.create(userInfo);
 				const userId = userDoc._id;
 
@@ -129,7 +125,7 @@ export class OwnerController {
 							const result = await roomDocument.save();
 							return res.status(200).json({ password, msg: "Tenant added successfully" });
 						} else {
-							return res.status(400).json({ error: "Room not found!" });
+							return res.status(400).json({ err: "Room not found!" });
 						}
 					}
 				}
@@ -137,17 +133,17 @@ export class OwnerController {
 				return res.status(400).json({ err: formatDbError(error) });
 			}
 		} else {
-			return res.status(400).json({ error: "Onwer not found" });
+			return res.status(400).json({ err: "Onwer not found" });
 		}
 	};
 
 	// owner dashboard details
-	getAllOwnerBuildings = (req: any, res: any) => {
+	getAllOwnerBuildings = (req: Request, res: Response) => {
 		const { ownerId } = req.body;
 		if (!ownerId || !verifyObjectId([ownerId])) {
 			return res.status(400).json({ err: "Incorrect owner detail" });
 		}
-		if (req.user) {
+		if (req.isAuth) {
 			Property.findOne({ ownerId })
 				.populate({
 					path: "buildings.rooms",
@@ -162,7 +158,7 @@ export class OwnerController {
 					return res.status(200).json({ ownerBuildingDetails: data });
 				});
 		} else {
-			return res.status(403).json({ err: "Invalid user" });
+			return res.status(403).json({ err: "Not Authorized" });
 		}
 	};
 }

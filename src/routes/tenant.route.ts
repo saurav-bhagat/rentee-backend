@@ -13,7 +13,6 @@ router.get("/ping", (req, res, next) => {
 
 router.put("/update-password", tenantController.updateTenantPassword);
 
-// /tenant/info
-router.post("/info", tenantController.tenantInfo);
+router.post("/dashboard", tenantController.tenantInfo);
 
 export default router;

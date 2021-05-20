@@ -2,18 +2,18 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IRooms extends Document {
 	_id: Schema.Types.ObjectId;
-	rent: Number;
-	type: String;
-	floor: String;
-	roomNo: Number;
-	isEmpty: Boolean;
+	rent: number;
+	type: string;
+	floor: string;
+	roomNo: number;
+	isEmpty: boolean;
 	tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IBuilding extends Document {
 	_id: Schema.Types.ObjectId;
-	name: String;
-	address: String;
+	name: string;
+	address: string;
 	rooms: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 

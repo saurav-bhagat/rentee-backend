@@ -76,7 +76,7 @@ export class OwnerController {
 		}
 
 		if (!verifyObjectId([ownerId, buildId, roomId])) {
-			return res.status(400).json({ err: "Either onwer/building/room  detail incorrect" });
+			return res.status(400).json({ err: "Incorrect details sent" });
 		}
 
 		const propertyDoc = await Property.findOne({ ownerId });
@@ -92,7 +92,7 @@ export class OwnerController {
 			};
 
 			try {
-				// Creating a user as a  tenant
+				// Creating a tenant User
 				const userDoc = await User.create(userInfo);
 				const userId = userDoc._id;
 
@@ -125,7 +125,7 @@ export class OwnerController {
 							const result = await roomDocument.save();
 							return res.status(200).json({ password, msg: "Tenant added successfully" });
 						} else {
-							return res.status(400).json({ error: "Room not found!" });
+							return res.status(400).json({ err: "Room not found!" });
 						}
 					}
 				}
@@ -133,7 +133,7 @@ export class OwnerController {
 				return res.status(400).json({ err: formatDbError(error) });
 			}
 		} else {
-			return res.status(400).json({ error: "Onwer not found" });
+			return res.status(400).json({ err: "Onwer not found" });
 		}
 	};
 

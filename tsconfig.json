@@ -2,7 +2,11 @@
   "compilerOptions": {                       
     "target": "es5",                               
     "module": "commonjs",                           
-    "lib": ["es6"],                                 
+    "lib": ["es6"], 
+    "typeRoots": [
+      "@types",
+      "./node_modules/@types",
+    ],                        
     "allowJs": true,                                                           
     "outDir": "build",                               
     "rootDir": "src",                               

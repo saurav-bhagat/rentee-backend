@@ -29,7 +29,7 @@ interface tenantObj {
 
 export class TenantController {
 	// Password update on first login
-	updateTenantPassword = async (req: any, res: Response) => {
+	updateTenantPassword = async (req: Request, res: Response) => {
 		const { email, password } = req.body;
 
 		if (req.user) {
@@ -58,7 +58,7 @@ export class TenantController {
 	};
 
 	// Tenant dashboard details
-	tenantInfo = async (req: any, res: any) => {
+	tenantInfo = async (req: Request, res: Response) => {
 		const { userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = req.body;
 
 		if (!verifyObjectId([userId])) {

@@ -7,11 +7,133 @@ import { formatDbError, isEmptyFields } from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
 import validator from "validator";
 import bcrypt from "bcrypt";
+import client from "../config/twilio";
+import Property from "../models/property/property";
+import Tenant from "../models/tenant/tenant";
+import { TenantObj } from "./tenant.controller";
+
+const verifyPhoneOtp = async (phoneNumber: any, code: any) => {
+	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
+		to: `+91${phoneNumber}`,
+		code,
+	});
+	if (data.valid == false) {
+		throw new Error("Otp not valid");
+	}
+	return data;
+};
+
+// if correct userDocument arrives then no promise rejection occurs so
+// before using thid mehtod handle userdoc null promise rejection method before call this one
+const generateTokensForUser = async (userDocument: any) => {
+	const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, "10m");
+	const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, "1d");
+	const user = await User.addRefreshToken(userDocument._id, refreshToken);
+	return accessToken;
+};
+
+const findTenant = async (userDocument: any) => {
+	const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
+		.populate({ path: "ownerId" })
+		.populate({ path: "roomId" })
+		.populate({ path: "userId" });
+	if (tenantDocument == null) {
+		throw new Error("Unable to find User");
+	}
+
+	const {
+		userId: userObject,
+		ownerId: ownerObject,
+		buildId,
+		roomId: roomObject,
+		_id: tenantId,
+		joinDate,
+		rentDueDate,
+		securityAmount: security,
+	} = tenantDocument;
+
+	const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber, _id } = <any>ownerObject;
+	const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = <any>userObject;
+	const { rent, type: roomType, floor, roomNo: roomNumber } = <any>roomObject;
+	const propertyDocument = await Property.findOne({ ownerId: _id });
+	if (propertyDocument == null) {
+		return new Error("Unable to find property for user");
+	}
+	let result: TenantObj = {};
+
+	for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
+		let building = propertyDocument.buildings[i];
+		if (building._id.toString() == buildId.toString()) {
+			const { name: buildingName, address: buildingAddress } = building;
+			result = {
+				tenantEmail,
+				tenantName,
+				tenantPhoneNumber,
+				roomNumber,
+				roomType,
+				rent,
+				floor,
+				joinDate,
+				rentDueDate,
+				security,
+				buildingName,
+				buildingAddress,
+				ownerName,
+				ownerEmail,
+				ownerPhoneNumber,
+			};
+		}
+	}
+	let tenantInfo = new Promise((resolve, reject) => {
+		resolve(result);
+	});
+	return tenantInfo;
+};
+
+const findDashboardForUser = async (userDocument: any) => {
+	if (userDocument.userType == "Owner") {
+		console.log(userDocument);
+		const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
+			path: "buildings.rooms",
+			populate: {
+				path: "tenants",
+				populate: {
+					path: "userId",
+				},
+			},
+		});
+		if (propertyDetails == null) {
+			throw new Error("Unable to find owner for user ");
+		}
+		return propertyDetails;
+	} else if (userDocument.userType == "Tenant") {
+		const tenantDetails = await findTenant(userDocument);
+		return tenantDetails;
+	}
+};
+
+const findUser = async (phoneNumber: any, code: any): Promise<any> => {
+	// for production it comment
+	//const data=await verifyPhoneOtp(phoneNumber,code);
+	const userDocument = await User.findOne({ phoneNumber });
+	if (userDocument == null) {
+		throw new Error(`Unable to find user with phoneNumber : ${phoneNumber}`);
+	}
+	const userDetails = await findDashboardForUser(userDocument);
+	const accessToken = await generateTokensForUser(userDocument);
+	let userInfo = new Promise((resolve, reject) => {
+		resolve({
+			userDetails,
+			accessToken,
+		});
+	});
+	return userInfo;
+};
 
 export class AuthController {
 	signUp = async (req: Request, res: Response) => {
-		const { name, email, password, phoneNumber } = req.body;
-		const userData = { name, email, password, phoneNumber };
+		const { name, email, password, phoneNumber, userType } = req.body;
+		const userData = { name, email, password, phoneNumber, userType };
 		if (isEmptyFields(userData)) {
 			return res.status(400).json({ err: "All fields are mandatory!" });
 		}
@@ -171,5 +293,25 @@ export class AuthController {
 	verifySms = (req: Request, res: Response) => {
 		//For development purposes we need to comment the below function
 		//  verifyOTP(req, res);
+	};
+
+	phoneAuthenticate = (req: Request, res: Response) => {
+		const { phoneNumber, code } = req.body;
+		if (phoneNumber.length === 10) {
+			if (code.length === 6) {
+				findUser(phoneNumber, code)
+					.then(userDocument => {
+						res.status(200).json({ userDocument });
+					})
+					.catch(err => {
+						console.log(err.message);
+						res.status(400).json({ err: err.message });
+					});
+			} else {
+				res.status(400).json({ err: "Code must be 6 digit " });
+			}
+		} else {
+			res.status(400).json({ err: "Please enter valid phone number" });
+		}
 	};
 }

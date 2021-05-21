@@ -9,7 +9,7 @@ const createToken = (user: IUser, jwtSecret: string, expireTime: string): Promis
 			email: user.email,
 			password: user.password,
 			phoneNumber: user.phoneNumber,
-			isOwner: user.isOwner,
+			isOwner: user.userType,
 			resetLink: user.resetLink,
 		};
 		const options = {

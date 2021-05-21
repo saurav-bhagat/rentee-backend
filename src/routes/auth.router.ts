@@ -11,7 +11,7 @@ router.post("/refresh-token", authController.handleRefreshToken);
 
 router.post("/signup", authController.signUp);
 
-router.post("/login", authController.authenticate);
+router.post("/login", authController.phoneAuthenticate);
 
 router.put("/forgot-password", authController.forgotPassword);
 

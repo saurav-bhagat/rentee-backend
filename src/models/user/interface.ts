@@ -6,7 +6,7 @@ export interface IUser extends Document {
 	email: string;
 	password: string;
 	phoneNumber: string;
-	isOwner: boolean;
+	userType: string;
 	resetLink: string;
 	refreshToken: string;
 }

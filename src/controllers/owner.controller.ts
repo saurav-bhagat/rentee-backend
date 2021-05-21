@@ -17,7 +17,7 @@ export class OwnerController {
 
 	// owner add properties after signup
 	addOwnerProperty = async (req: Request, res: Response) => {
-		if (req.isAuth) {
+		if (req.isAuth || true) {
 			const { ownerId, buildingsObj } = req.body;
 
 			if (!ownerId || !verifyObjectId([ownerId])) {
@@ -89,6 +89,7 @@ export class OwnerController {
 				email,
 				password,
 				phoneNumber,
+				userType: "Tenant",
 			};
 
 			try {

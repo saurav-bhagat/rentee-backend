@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import getJwtToken, { verifyRefreshToken } from "../utils/token";
 import User from "../models/user/User";
 import { IUser } from "../models/user/interface";
-import { sendOTP, verifyOTP } from "../utils/phoneNumberVerification";
+import { sendOTP } from "../utils/phoneNumberVerification";
 import { formatDbError, isEmptyFields } from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
 import validator from "validator";
@@ -11,6 +11,7 @@ import client from "../config/twilio";
 import Property from "../models/property/property";
 import Tenant from "../models/tenant/tenant";
 import { TenantObj } from "./tenant.controller";
+import mongoose from "mongoose";
 
 const verifyPhoneOtp = async (phoneNumber: any, code: any) => {
 	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
@@ -84,15 +85,17 @@ const findTenant = async (userDocument: any) => {
 			};
 		}
 	}
-	let tenantInfo = new Promise((resolve, reject) => {
+
+	return new Promise((resolve, reject) => {
+		if (result == null) {
+			reject("Unable to find User");
+		}
 		resolve(result);
 	});
-	return tenantInfo;
 };
 
 const findDashboardForUser = async (userDocument: any) => {
 	if (userDocument.userType == "Owner") {
-		console.log(userDocument);
 		const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
 			path: "buildings.rooms",
 			populate: {
@@ -112,25 +115,43 @@ const findDashboardForUser = async (userDocument: any) => {
 	}
 };
 
+const registerUser = async (phoneNumber: any) => {
+	const user = await User.collection.insertOne({
+		_id: new mongoose.Types.ObjectId(),
+		phoneNumber,
+	});
+	if (user == null) {
+		throw new Error("Unable to register ");
+	}
+	const accessToken = await generateTokensForUser(user.ops);
+	return new Promise((resolve, reject) => {
+		resolve({
+			accessToken,
+			firstLogin: true,
+		});
+	});
+};
+
 const findUser = async (phoneNumber: any, code: any): Promise<any> => {
 	// for production it comment
 	//const data=await verifyPhoneOtp(phoneNumber,code);
 	const userDocument = await User.findOne({ phoneNumber });
 	if (userDocument == null) {
-		throw new Error(`Unable to find user with phoneNumber : ${phoneNumber}`);
+		const user = await registerUser(phoneNumber);
+		return user;
 	}
 	const userDetails = await findDashboardForUser(userDocument);
 	const accessToken = await generateTokensForUser(userDocument);
-	let userInfo = new Promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
 		resolve({
 			userDetails,
 			accessToken,
 		});
 	});
-	return userInfo;
 };
 
 export class AuthController {
+	// Not using this functionality for now
 	signUp = async (req: Request, res: Response) => {
 		const { name, email, password, phoneNumber, userType } = req.body;
 		const userData = { name, email, password, phoneNumber, userType };
@@ -156,6 +177,7 @@ export class AuthController {
 		}
 	};
 
+	// Not using this functionality for now
 	authenticate = async (req: Request, res: Response) => {
 		const { email, password } = req.body;
 		const userData = { email, password };
@@ -290,28 +312,19 @@ export class AuthController {
 		// sendOTP(req, res);
 	};
 
-	verifySms = (req: Request, res: Response) => {
-		//For development purposes we need to comment the below function
-		//  verifyOTP(req, res);
-	};
-
 	phoneAuthenticate = (req: Request, res: Response) => {
 		const { phoneNumber, code } = req.body;
-		if (phoneNumber.length === 10) {
-			if (code.length === 6) {
-				findUser(phoneNumber, code)
-					.then(userDocument => {
-						res.status(200).json({ userDocument });
-					})
-					.catch(err => {
-						console.log(err.message);
-						res.status(400).json({ err: err.message });
-					});
-			} else {
-				res.status(400).json({ err: "Code must be 6 digit " });
-			}
+		if (phoneNumber.length === 10 && code.length === 6) {
+			findUser(phoneNumber, code)
+				.then(userDocument => {
+					return res.status(200).json({ userDocument });
+				})
+				.catch(err => {
+					console.log(err);
+					return res.status(400).json({ err: err.message });
+				});
 		} else {
-			res.status(400).json({ err: "Please enter valid phone number" });
+			res.status(400).json({ err: "Either  phone/code detail are incorrect" });
 		}
 	};
 }

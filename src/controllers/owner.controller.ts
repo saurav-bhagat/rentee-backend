@@ -9,6 +9,9 @@ import { formatDbError, isEmptyFields } from "../utils/errorUtils";
 
 import randomstring from "randomstring";
 import { verifyObjectId } from "../utils/errorUtils";
+import bcrypt from "bcrypt";
+
+import validator from "validator";
 
 export class OwnerController {
 	pong = (req: Request, res: Response) => {
@@ -17,8 +20,32 @@ export class OwnerController {
 
 	// owner add properties after signup
 	addOwnerProperty = async (req: Request, res: Response) => {
-		if (req.isAuth || true) {
-			const { ownerId, buildingsObj } = req.body;
+		if (req.isAuth) {
+			const { ownerId, buildingsObj, name, email, password } = req.body;
+			const userData = { name, email, password };
+			if (isEmptyFields(userData)) {
+				return res.status(400).json({ err: "All fields are mandatory!" });
+			}
+
+			if (!validator.isEmail(email) || password.length < 6) {
+				return res.status(400).json({ err: "Either email/password/phonenumber is not valid" });
+			}
+			try {
+				const salt = await bcrypt.genSalt();
+				const hashedPassword = await bcrypt.hash(password, salt);
+
+				const ownerUpdatedDoc = await User.findByIdAndUpdate(
+					{ _id: ownerId },
+					{ name, email, password: hashedPassword, userType: "Owner" },
+					{
+						new: true,
+						runValidators: true,
+						context: "query",
+					}
+				);
+			} catch (error) {
+				return res.status(400).json({ err: formatDbError(error) });
+			}
 
 			if (!ownerId || !verifyObjectId([ownerId])) {
 				return res.status(400).json({ err: "Incorrect owner detail" });

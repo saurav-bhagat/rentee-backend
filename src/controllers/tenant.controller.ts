@@ -16,7 +16,7 @@ export interface TenantObj {
 	roomType?: string;
 	rent?: number;
 	floor?: string;
-	joinDate?: Date;
+	joinDate?: string;
 	rentDueDate?: string;
 	security?: number;
 	buildingName?: string;

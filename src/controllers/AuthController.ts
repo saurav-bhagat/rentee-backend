@@ -7,22 +7,11 @@ import { formatDbError, isEmptyFields } from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
 import validator from "validator";
 import bcrypt from "bcrypt";
-import client from "../config/twilio";
+import { verifyPhoneOtp } from "../utils/phoneNumberVerification";
 import Property from "../models/property/property";
 import Tenant from "../models/tenant/tenant";
 import { TenantObj } from "./tenant.controller";
 import mongoose from "mongoose";
-
-const verifyPhoneOtp = async (phoneNumber: any, code: any) => {
-	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
-		to: `+91${phoneNumber}`,
-		code,
-	});
-	if (data.valid == false) {
-		throw new Error("Otp not valid");
-	}
-	return data;
-};
 
 // if correct userDocument arrives then no promise rejection occurs so
 // before using thid mehtod handle userdoc null promise rejection method before call this one
@@ -58,7 +47,7 @@ const findTenant = async (userDocument: any) => {
 	const { rent, type: roomType, floor, roomNo: roomNumber } = <any>roomObject;
 	const propertyDocument = await Property.findOne({ ownerId: _id });
 	if (propertyDocument == null) {
-		return new Error("Unable to find property for user");
+		throw new Error("Unable to find property for user");
 	}
 	let result: TenantObj = {};
 

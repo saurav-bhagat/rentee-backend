@@ -47,3 +47,14 @@ export const verifyOTP = (req: Request, res: Response) => {
 		res.status(500).json({ err: "Please enter valid phone number" });
 	}
 };
+
+export const verifyPhoneOtp = async (phoneNumber: any, code: any) => {
+	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
+		to: `+91${phoneNumber}`,
+		code,
+	});
+	if (data.valid == false) {
+		throw new Error("Otp not valid");
+	}
+	return data;
+};

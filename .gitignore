@@ -4,7 +4,7 @@
 /build
 
 #for rest file
-/src/request.rest
+/src/api-urls
 
 # dependencies
 /node_modules

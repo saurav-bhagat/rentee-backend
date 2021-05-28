@@ -28,9 +28,9 @@ const userSchema = new Schema(
 			validate: [validator.isMobilePhone, "Please enter an valid phone number"],
 			unique: [true, "Phone number is already registered"],
 		},
-		isOwner: {
-			type: Boolean,
-			default: false,
+		userType: {
+			type: String,
+			enum: ["Owner", "Tenant", "Maintainer"],
 		},
 		resetLink: {
 			type: String,

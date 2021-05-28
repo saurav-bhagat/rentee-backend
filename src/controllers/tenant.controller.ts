@@ -8,7 +8,7 @@ import Tenant from "../models/tenant/tenant";
 
 import { verifyObjectId } from "../utils/errorUtils";
 
-interface TenantObj {
+export interface TenantObj {
 	tenantEmail?: string;
 	tenantName?: string;
 	tenantPhoneNumber?: number;
@@ -16,7 +16,7 @@ interface TenantObj {
 	roomType?: string;
 	rent?: number;
 	floor?: string;
-	joinDate?: Date;
+	joinDate?: string;
 	rentDueDate?: string;
 	security?: number;
 	buildingName?: string;

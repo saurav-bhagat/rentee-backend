@@ -3,7 +3,7 @@ import { Schema, Document } from "mongoose";
 export interface ITenant extends Document {
 	_id: Schema.Types.ObjectId;
 	userId: Schema.Types.ObjectId;
-	joinDate: Date;
+	joinDate: string;
 	rentDueDate: string;
 	securityAmount: number;
 	ownerId: Schema.Types.ObjectId;

@@ -4,7 +4,7 @@ import { ITenant } from "./interface";
 const tenantSchema = new Schema(
 	{
 		userId: { type: Schema.Types.ObjectId, ref: "user" },
-		joinDate: { type: Date, default: Date.now },
+		joinDate: String,
 		rentDueDate: String,
 		securityAmount: Number,
 		ownerId: { type: Schema.Types.ObjectId, ref: "user" },

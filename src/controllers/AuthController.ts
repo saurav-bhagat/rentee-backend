@@ -2,142 +2,15 @@ import { Request, Response } from "express";
 import getJwtToken, { verifyRefreshToken } from "../utils/token";
 import User from "../models/user/User";
 import { IUser } from "../models/user/interface";
-import { sendOTP } from "../utils/phoneNumberVerification";
+import { sendOTP, verifyPhoneOtp } from "../utils/phoneNumberVerification";
 import { formatDbError, isEmptyFields } from "../utils/errorUtils";
 import NodeMailer from "../config/nodemailer";
 import validator from "validator";
 import bcrypt from "bcrypt";
-import { verifyPhoneOtp } from "../utils/phoneNumberVerification";
 import Property from "../models/property/property";
 import Tenant from "../models/tenant/tenant";
 import { TenantObj } from "./tenant.controller";
 import mongoose from "mongoose";
-
-// if correct userDocument arrives then no promise rejection occurs so
-// before using thid mehtod handle userdoc null promise rejection method before call this one
-const generateTokensForUser = async (userDocument: any) => {
-	const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, "10m");
-	const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, "1d");
-	const user = await User.addRefreshToken(userDocument._id, refreshToken);
-	return accessToken;
-};
-
-const findTenant = async (userDocument: any) => {
-	const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
-		.populate({ path: "ownerId" })
-		.populate({ path: "roomId" })
-		.populate({ path: "userId" });
-	if (tenantDocument == null) {
-		throw new Error("Unable to find User");
-	}
-
-	const {
-		userId: userObject,
-		ownerId: ownerObject,
-		buildId,
-		roomId: roomObject,
-		_id: tenantId,
-		joinDate,
-		rentDueDate,
-		securityAmount: security,
-	} = tenantDocument;
-
-	const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber, _id } = <any>ownerObject;
-	const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = <any>userObject;
-	const { rent, type: roomType, floor, roomNo: roomNumber } = <any>roomObject;
-	const propertyDocument = await Property.findOne({ ownerId: _id });
-	if (propertyDocument == null) {
-		throw new Error("Unable to find property for user");
-	}
-	let result: TenantObj = {};
-
-	for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
-		let building = propertyDocument.buildings[i];
-		if (building._id.toString() == buildId.toString()) {
-			const { name: buildingName, address: buildingAddress } = building;
-			result = {
-				tenantEmail,
-				tenantName,
-				tenantPhoneNumber,
-				roomNumber,
-				roomType,
-				rent,
-				floor,
-				joinDate,
-				rentDueDate,
-				security,
-				buildingName,
-				buildingAddress,
-				ownerName,
-				ownerEmail,
-				ownerPhoneNumber,
-			};
-		}
-	}
-
-	return new Promise((resolve, reject) => {
-		if (result == null) {
-			reject("Unable to find User");
-		}
-		resolve(result);
-	});
-};
-
-const findDashboardForUser = async (userDocument: any) => {
-	if (userDocument.userType == "Owner") {
-		const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
-			path: "buildings.rooms",
-			populate: {
-				path: "tenants",
-				populate: {
-					path: "userId",
-				},
-			},
-		});
-		if (propertyDetails == null) {
-			throw new Error("Unable to find owner for user ");
-		}
-		return propertyDetails;
-	} else if (userDocument.userType == "Tenant") {
-		const tenantDetails = await findTenant(userDocument);
-		return tenantDetails;
-	}
-};
-
-const registerUser = async (phoneNumber: any) => {
-	const user = await User.collection.insertOne({
-		_id: new mongoose.Types.ObjectId(),
-		phoneNumber,
-	});
-	if (user == null) {
-		throw new Error("Unable to register ");
-	}
-	const accessToken = await generateTokensForUser(user.ops);
-	return new Promise((resolve, reject) => {
-		resolve({
-			accessToken,
-			firstLogin: true,
-		});
-	});
-};
-
-const findUser = async (phoneNumber: any, code: any): Promise<any> => {
-	// for production it comment
-	//const data=await verifyPhoneOtp(phoneNumber,code);
-	const userDocument = await User.findOne({ phoneNumber });
-	if (userDocument == null) {
-		const user = await registerUser(phoneNumber);
-		return user;
-	}
-	const userDetails = await findDashboardForUser(userDocument);
-	const accessToken = await generateTokensForUser(userDocument);
-	return new Promise((resolve, reject) => {
-		resolve({
-			userDetails,
-			accessToken,
-		});
-	});
-};
 
 export class AuthController {
 	// Not using this functionality for now
@@ -295,16 +168,145 @@ export class AuthController {
 		}
 	};
 
-	sendSms = (req: Request, res: Response) => {
+	sendOtpOnLogin = (req: Request, res: Response) => {
 		console.log("receiving phone number for opt");
 		//For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
 
+	// if correct userDocument arrives then no promise rejection occurs so
+	// before using thid mehtod handle userdoc null promise rejection method before call this one
+	generateTokensForUser = async (userDocument: any) => {
+		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, "10m");
+		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, "1d");
+		const user = await User.addRefreshToken(userDocument._id, refreshToken);
+		return accessToken;
+	};
+
+	findTenant = async (userDocument: any) => {
+		const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
+			.populate({ path: "ownerId" })
+			.populate({ path: "roomId" })
+			.populate({ path: "userId" });
+		if (tenantDocument == null) {
+			throw new Error("Unable to find User");
+		}
+
+		const {
+			userId: userObject,
+			ownerId: ownerObject,
+			buildId,
+			roomId: roomObject,
+			_id: tenantId,
+			joinDate,
+			rentDueDate,
+			securityAmount: security,
+		} = tenantDocument;
+
+		const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber, _id: ownerId } = <any>ownerObject;
+		const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = <any>userObject;
+		const { rent, type: roomType, floor, roomNo: roomNumber } = <any>roomObject;
+
+		//Finding building with ownerId and buildId
+		const building = await Property.aggregate([
+			{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
+			{ $unwind: "$buildings" },
+			{ $match: { "buildings._id": buildId } },
+		]);
+
+		if (building.length == 0) {
+			throw new Error("Unable to find property for user");
+		}
+
+		let result: TenantObj = {};
+
+		const { name: buildingName, address: buildingAddress } = <any>building;
+
+		result = {
+			tenantEmail,
+			tenantName,
+			tenantPhoneNumber,
+			roomNumber,
+			roomType,
+			rent,
+			floor,
+			joinDate,
+			rentDueDate,
+			security,
+			buildingName,
+			buildingAddress,
+			ownerName,
+			ownerEmail,
+			ownerPhoneNumber,
+		};
+		return new Promise((resolve, reject) => {
+			if (result == null) {
+				reject("Unable to find User");
+			}
+			resolve(result);
+		});
+	};
+
+	findDashboardForUser = async (userDocument: any) => {
+		if (userDocument.userType == "Owner") {
+			const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
+				path: "buildings.rooms",
+				populate: {
+					path: "tenants",
+					populate: {
+						path: "userId",
+					},
+				},
+			});
+			if (propertyDetails == null) {
+				throw new Error("Unable to find owner for user ");
+			}
+			return propertyDetails;
+		} else if (userDocument.userType == "Tenant") {
+			const tenantDetails = await this.findTenant(userDocument);
+			return tenantDetails;
+		}
+	};
+
+	registerUser = async (phoneNumber: any) => {
+		const user = await User.collection.insertOne({
+			_id: new mongoose.Types.ObjectId(),
+			phoneNumber,
+		});
+		if (user == null) {
+			throw new Error("Unable to register ");
+		}
+		const accessToken = await this.generateTokensForUser(user.ops);
+		return new Promise((resolve, reject) => {
+			resolve({
+				accessToken,
+				firstLogin: true,
+			});
+		});
+	};
+
+	findUser = async (phoneNumber: any, code: any): Promise<any> => {
+		// for production it comment
+		//const data=await verifyPhoneOtp(phoneNumber,code);
+		const userDocument = await User.findOne({ phoneNumber });
+		if (userDocument == null) {
+			const user = await this.registerUser(phoneNumber);
+			return user;
+		}
+		const userDetails = await this.findDashboardForUser(userDocument);
+		const accessToken = await this.generateTokensForUser(userDocument);
+		return new Promise((resolve, reject) => {
+			resolve({
+				userDetails,
+				accessToken,
+			});
+		});
+	};
+
 	phoneAuthenticate = (req: Request, res: Response) => {
 		const { phoneNumber, code } = req.body;
 		if (phoneNumber.length === 10 && code.length === 6) {
-			findUser(phoneNumber, code)
+			this.findUser(phoneNumber, code)
 				.then(userDocument => {
 					return res.status(200).json({ userDocument });
 				})

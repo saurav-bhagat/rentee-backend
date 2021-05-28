@@ -15,7 +15,7 @@ router.put("/forgot-password", authController.forgotPassword);
 
 router.post("/reset-password", authController.resetPassword);
 
-router.post("/send-sms", authController.sendSms);
+router.post("/send-otp", authController.sendOtpOnLogin);
 
 router.get("/protected", isAuth, (req: any, res: any) => {
 	console.log(req.user);

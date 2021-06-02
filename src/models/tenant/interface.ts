@@ -1,4 +1,4 @@
-import { Schema, Document } from "mongoose";
+import { Schema, Document } from 'mongoose';
 
 export interface ITenant extends Document {
 	_id: Schema.Types.ObjectId;

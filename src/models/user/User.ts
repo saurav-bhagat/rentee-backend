@@ -1,40 +1,40 @@
-import { Schema, model, Document, Model } from "mongoose";
-import validator from "validator";
-import bcrypt from "bcrypt";
-import uniqueValidator from "mongoose-unique-validator";
-import { IUser, IModel } from "./interface";
+import { Schema, model } from 'mongoose';
+import validator from 'validator';
+import bcrypt from 'bcrypt';
+import uniqueValidator from 'mongoose-unique-validator';
+import { IUser, IModel } from './interface';
 
 const userSchema = new Schema(
 	{
 		name: {
 			type: String,
-			required: [true, "Please enter your name"],
+			required: [true, 'Please enter your name'],
 		},
 		email: {
 			type: String,
-			required: [true, "Please enter an email"],
-			unique: [true, "Email is already registered"],
+			required: [true, 'Please enter an email'],
+			unique: [true, 'Email is already registered'],
 			lowercase: true,
-			validate: [validator.isEmail, "Please enter an valid email"],
+			validate: [validator.isEmail, 'Please enter an valid email'],
 		},
 		password: {
 			type: String,
-			required: [true, "Please enter a password"],
-			minlength: [6, "Minimum password length is 6 characters"],
+			required: [true, 'Please enter a password'],
+			minlength: [6, 'Minimum password length is 6 characters'],
 		},
 		phoneNumber: {
 			type: String,
-			required: [true, "Please enter phone number"],
-			validate: [validator.isMobilePhone, "Please enter an valid phone number"],
-			unique: [true, "Phone number is already registered"],
+			required: [true, 'Please enter phone number'],
+			validate: [validator.isMobilePhone, 'Please enter an valid phone number'],
+			unique: [true, 'Phone number is already registered'],
 		},
 		userType: {
 			type: String,
-			enum: ["Owner", "Tenant", "Maintainer"],
+			enum: ['Owner', 'Tenant', 'Maintainer'],
 		},
 		resetLink: {
 			type: String,
-			default: "",
+			default: '',
 		},
 		refreshToken: {
 			type: String,
@@ -43,11 +43,11 @@ const userSchema = new Schema(
 	{ timestamps: true }
 );
 
-//this method fire before doc save to db
-userSchema.pre<IUser>("save", async function (next) {
+// this method fire before doc save to db
+userSchema.pre<IUser>('save', async function (next) {
 	const salt = await bcrypt.genSalt();
-	let plainText = this.get("password");
-	this.set("password", await bcrypt.hash(plainText, salt));
+	const plainText = this.get('password');
+	this.set('password', await bcrypt.hash(plainText, salt));
 	next();
 });
 
@@ -59,14 +59,14 @@ userSchema.statics.login = async function (email: string, password: string) {
 		if (auth) {
 			return user;
 		}
-		throw Error("Incorrect password");
+		throw Error('Incorrect password');
 	} else {
-		throw Error("Incorrect email");
+		throw Error('Incorrect email');
 	}
 };
 
 userSchema.statics.addRefreshToken = async function (id: string, refreshToken: string) {
-	const response = await this.findByIdAndUpdate(id, { refreshToken, resetLink: "" }, { new: true }, (err, user) => {
+	const response = await this.findByIdAndUpdate(id, { refreshToken, resetLink: '' }, { new: true }, (err, user) => {
 		if (err) {
 			return err;
 		} else {
@@ -82,12 +82,12 @@ userSchema.statics.findUserForRefreshToken = async function (id: string, refresh
 	if (user && user.refreshToken === refreshToken) {
 		return user;
 	} else {
-		throw Error("Invalid user");
+		throw Error('Invalid user');
 	}
 };
 
-const User = model<IUser, IModel>("user", userSchema);
+const User = model<IUser, IModel>('user', userSchema);
 
-userSchema.plugin(uniqueValidator, { message: "{PATH} already exist" });
+userSchema.plugin(uniqueValidator, { message: '{PATH} already exist' });
 
 export default User;

@@ -1,4 +1,4 @@
-import { Schema, Document, Model } from "mongoose";
+import { Schema, Document, Model } from 'mongoose';
 
 export interface IUser extends Document {
 	_id: Schema.Types.ObjectId;
@@ -13,6 +13,6 @@ export interface IUser extends Document {
 
 export interface IModel extends Model<IUser> {
 	login: (email: Schema.Types.ObjectId, password: string) => IUser;
-	addRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => object;
+	addRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => Record<string, unknown>;
 	findUserForRefreshToken: (id: Schema.Types.ObjectId, refreshToken: string) => IUser;
 }

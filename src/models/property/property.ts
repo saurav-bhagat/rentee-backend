@@ -1,18 +1,18 @@
-import { Schema, model } from "mongoose";
-import uniqueValidator from "mongoose-unique-validator";
-import { IProperty } from "./interface";
-import { buildingSchema } from "./subSchema";
+import { Schema, model } from 'mongoose';
+import uniqueValidator from 'mongoose-unique-validator';
+import { IProperty } from './interface';
+import { buildingSchema } from './subSchema';
 
 const propertySchema = new Schema(
 	{
-		ownerId: { type: Schema.Types.ObjectId, ref: "user", unique: true },
+		ownerId: { type: Schema.Types.ObjectId, ref: 'user', unique: true },
 		buildings: [buildingSchema],
 	},
 	{ timestamps: true }
 );
 
-const property = model<IProperty>("property", propertySchema);
+const property = model<IProperty>('property', propertySchema);
 
-propertySchema.plugin(uniqueValidator, { message: "{PATH} already exist" });
+propertySchema.plugin(uniqueValidator, { message: '{PATH} already exist' });
 
 export default property;

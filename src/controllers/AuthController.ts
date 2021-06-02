@@ -298,7 +298,7 @@ export class AuthController {
 		});
 	};
 
-	findUser = async (phoneNumber: string, code: number) => {
+	findUser = async (phoneNumber: string, code: string) => {
 		// for production it comment
 		// const data=await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });

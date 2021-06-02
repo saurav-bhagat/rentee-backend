@@ -44,7 +44,7 @@ export const verifyOTP = (req: Request, res: Response): Response<void> => {
 	return res.status(400).json({ err: 'OTP verification failed!' });
 };
 
-export const verifyPhoneOtp = async (phoneNumber: string, code: number): Promise<any> => {
+export const verifyPhoneOtp = async (phoneNumber: string, code: string): Promise<any> => {
 	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
 		to: `+91${phoneNumber}`,
 		code,

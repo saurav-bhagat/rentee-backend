@@ -270,7 +270,7 @@ export class AuthController {
 				},
 			});
 			if (propertyDetails == null) {
-				throw new Error('Unable to find owner for user ');
+				throw new Error('Property details not added by owner yet');
 			}
 			return propertyDetails;
 		} else if (userDocument.userType == 'Tenant') {
@@ -284,6 +284,7 @@ export class AuthController {
 		const user = await User.collection.insertOne({
 			_id: new mongoose.Types.ObjectId(),
 			phoneNumber,
+			userType: 'Owner',
 		});
 		if (user == null) {
 			throw new Error('Unable to register ');
@@ -298,7 +299,7 @@ export class AuthController {
 		});
 	};
 
-	findUser = async (phoneNumber: string, code: number) => {
+	findUser = async (phoneNumber: string, code: string) => {
 		// for production it comment
 		// const data=await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });

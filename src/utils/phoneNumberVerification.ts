@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import client from '../config/twilio';
 
-export const sendOTP = (req: Request, res: Response): Response<void> => {
+export const sendOTP = (req: Request, res: Response) => {
 	// validation for phone and channel input?
 	const { phoneNumber } = req.body;
 	if (phoneNumber.length === 10) {
@@ -22,7 +22,7 @@ export const sendOTP = (req: Request, res: Response): Response<void> => {
 	return res.status(400).json({ err: 'Try again!' });
 };
 
-export const verifyOTP = (req: Request, res: Response): Response<void> => {
+export const verifyOTP = (req: Request, res: Response) => {
 	const { phoneNumber, code } = req.body;
 	if (phoneNumber.length === 10) {
 		if (code.length === 6) {
@@ -44,7 +44,7 @@ export const verifyOTP = (req: Request, res: Response): Response<void> => {
 	return res.status(400).json({ err: 'OTP verification failed!' });
 };
 
-export const verifyPhoneOtp = async (phoneNumber: string, code: number): Promise<any> => {
+export const verifyPhoneOtp = async (phoneNumber: string, code: string): Promise<any> => {
 	const data = await client.verify.services(process.env.TWILIO_SERVICE_SID as string).verificationChecks.create({
 		to: `+91${phoneNumber}`,
 		code,

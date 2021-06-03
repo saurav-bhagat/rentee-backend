@@ -45,7 +45,7 @@ export class OwnerController {
 
 				await User.findByIdAndUpdate(
 					{ _id: ownerId },
-					{ name, email, password: hashedPassword, userType: 'Owner' },
+					{ name, email, password: hashedPassword },
 					{
 						new: true,
 						runValidators: true,

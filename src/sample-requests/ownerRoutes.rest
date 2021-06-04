@@ -1,0 +1,67 @@
+POST http://localhost:3000/owner/add-property
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZWQwMzVhNTI3YmM3YzhiN2YiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI3Mzc3MjYsImV4cCI6MTYyMjczODMyNiwiaXNzIjoicmVudGVlLmNvbSJ9.LJqB7UgF6LL061vPnB5toCc5Cde5UdpVPExZuOQhOiM
+
+{   
+   "ownerId":"60b9033ed035a527bc7c8b7f",
+    "name":"jack",
+    "email":"jack@cas.com",
+    "password":"asdedd",
+    "buildingsObj":[
+                  {
+                      "name":"building1",
+                      "address":"yamuna nagar",
+                      "rooms":[{   "rent":1000,
+                                   "type":"1bhk",
+                                   "floor":"1",
+                                   "roomNo":"1"
+                                },
+                                { "rent":2000,
+                                  "type":"2bhk",
+                                  "floor":"1",
+                                  "roomNo":"2"
+                                }
+                             ]
+                  },
+                  {
+                      "name":"building2",
+                      "address":"azad nagar",
+                      "rooms":[{   "rent":2000,
+                                   "type":"2bhk",
+                                   "floor":"1",
+                                   "roomNo":"1"
+                                },
+                                { "rent":3000,
+                                  "type":"3bhk",
+                                  "floor":"1",
+                                  "roomNo":"2"
+                                }
+                             ]
+                  }
+               ]
+
+}
+
+###
+Post http://localhost:3000/owner/register-tenant
+Content-Type: application/json
+
+{
+          "name":"impala",
+           "email":"impala1111@67.com",
+           "phoneNumber":"8814058881",
+            "securityAmount":"1000",
+            "ownerId":"60b9033ed035a527bc7c8b7f",
+            "buildId":"60b90370d035a527bc7c8b83",
+            "roomId":"60b90370d035a527bc7c8b81"
+}
+
+###
+POST http://localhost:3000/owner/dashboard
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZWQwMzVhNTI3YmM3YzhiN2YiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI3Mzc3MjYsImV4cCI6MTYyMjczODMyNiwiaXNzIjoicmVudGVlLmNvbSJ9.LJqB7UgF6LL061vPnB5toCc5Cde5UdpVPExZuOQhOiM
+
+{
+  "ownerId":"60b9033ed035a527bc7c8b7f"
+
+}

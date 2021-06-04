@@ -1,0 +1,54 @@
+
+POST http://localhost:3000/auth/send-otp
+Content-Type: application/json
+
+{
+     
+    "phoneNumber":"9588500964"
+
+}
+
+
+
+
+###
+POST http://localhost:3000/auth/authenticate
+Content-Type: application/json
+
+{ 
+      // owner phone number 
+      "phoneNumber":"9588500964",
+      // tenant phone number 
+      //"phoneNumber":"8814058881",
+      "code":"604143"
+}
+
+
+###
+PUT http://localhost:3000/auth/forgot-password
+Content-Type: application/json
+
+{
+     "email":"jack@cas.com"
+}
+
+
+###
+POST http://localhost:3000/auth/reset-password
+Content-Type: application/json
+
+{
+      "newPassword":"dfddff",
+      "token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZWQwMzVhNTI3YmM3YzhiN2YiLCJuYW1lIjoiamFjayIsImVtYWlsIjoiamFja0BjYXMuY29tIiwicGFzc3dvcmQiOiIkMmIkMTAkT1RuQlJXT2xwMG9iYkZjOUVpd1FmdWdlNjRjeVJMS0k0aHRpeG5NS2NtZ0xXNktNbkJjN0siLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJyZXNldExpbmsiOiIiLCJpYXQiOjE2MjI3Mzg4MTcsImV4cCI6MTYyMjc0MDAxNywiaXNzIjoicmVudGVlLmNvbSJ9.KDFqBF1lRrp66Wt84L4NCvYTDLp9hO6UI8U4MPxK1wc"
+      
+}
+
+
+
+###
+POST http://localhost:3000/auth/refresh-token
+Content-Type: application/json
+
+{
+    "refreshToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDNmZGQwMzVhNTI3YmM3YzhiODciLCJuYW1lIjoiaW1wYWxhIiwiZW1haWwiOiJpbXBhbGExMTExQDY3LmNvbSIsInBhc3N3b3JkIjoiJDJiJDEwJFdoVXg1YUc3VXBNYkowOC4vb2trWi5tbXZUUnlvQ1NqdzNzdmNiYzFFaTUxeE9WMnovc3ouIiwicGhvbmVOdW1iZXIiOiI4ODE0MDU4ODgxIiwiaXNPd25lciI6IlRlbmFudCIsInJlc2V0TGluayI6IiIsImlhdCI6MTYyMjczODM3NCwiZXhwIjoxNjIyODI0Nzc0LCJpc3MiOiJyZW50ZWUuY29tIn0.8skPKobCEj5AgpLmQnZpq4hewOHWo2rgh7QAjwwKW2A"
+}

@@ -1,35 +1,37 @@
-import { Request, Response } from "express";
-import getJwtToken, { verifyRefreshToken } from "../utils/token";
-import User from "../models/user/User";
-import { IUser } from "../models/user/interface";
-import { sendOTP, verifyPhoneOtp } from "../utils/phoneNumberVerification";
-import { formatDbError, isEmptyFields } from "../utils/errorUtils";
-import NodeMailer from "../config/nodemailer";
-import validator from "validator";
-import bcrypt from "bcrypt";
-import Property from "../models/property/property";
-import Tenant from "../models/tenant/tenant";
-import { TenantObj } from "./tenant.controller";
-import mongoose from "mongoose";
+import { Request, Response } from 'express';
+import getJwtToken, { verifyRefreshToken } from '../utils/token';
+import User from '../models/user/User';
+import { IUser } from '../models/user/interface';
+import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
+import { formatDbError, isEmptyFields } from '../utils/errorUtils';
+import NodeMailer from '../config/nodemailer';
+import validator from 'validator';
+import bcrypt from 'bcrypt';
+import Property from '../models/property/property';
+import Tenant from '../models/tenant/tenant';
+import { TenantObj } from './tenant.controller';
+import mongoose from 'mongoose';
+import { ITenant } from '../models/tenant/interface';
+import { IProperty, IRooms } from '../models/property/interface';
 
 export class AuthController {
 	// Not using this functionality for now
-	signUp = async (req: Request, res: Response) => {
+	signUp = async (req: Request, res: Response): Promise<Response<void>> => {
 		const { name, email, password, phoneNumber, userType } = req.body;
 		const userData = { name, email, password, phoneNumber, userType };
 		if (isEmptyFields(userData)) {
-			return res.status(400).json({ err: "All fields are mandatory!" });
+			return res.status(400).json({ err: 'All fields are mandatory!' });
 		}
 
 		if (!validator.isEmail(email) || password.length < 6 || !validator.isMobilePhone(phoneNumber)) {
-			return res.status(400).json({ err: "Either email/password/phonenumber is not valid" });
+			return res.status(400).json({ err: 'Either email/password/phonenumber is not valid' });
 		}
 
 		try {
 			const userdoc = await User.create(userData);
 
-			const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
-			const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
+			const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, '10m');
+			const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, '1d');
 
 			const user = await User.addRefreshToken(userdoc._id, refreshToken);
 
@@ -45,19 +47,19 @@ export class AuthController {
 		const userData = { email, password };
 
 		if (isEmptyFields(userData)) {
-			return res.status(400).json({ err: "All fields are mandatory!" });
+			return res.status(400).json({ err: 'All fields are mandatory!' });
 		}
 
 		if (!validator.isEmail(email) || password.length < 6) {
-			return res.status(400).json({ err: "Either email/password is not valid" });
+			return res.status(400).json({ err: 'Either email/password is not valid' });
 		}
 
 		try {
 			const userdoc: IUser = await User.login(email, password);
 
 			// For generating tokens
-			const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, "10m");
-			const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, "1d");
+			const accessToken = await getJwtToken(userdoc, process.env.JWT_ACCESS_SECRET as string, '10m');
+			const refreshToken = await getJwtToken(userdoc, process.env.JWT_REFRESH_SECRET as string, '1d');
 
 			const user = await User.addRefreshToken(userdoc._id, refreshToken);
 
@@ -70,10 +72,10 @@ export class AuthController {
 		}
 	};
 
-	handleRefreshToken = async (req: any, res: any) => {
+	handleRefreshToken = async (req: Request, res: Response) => {
 		const { refreshToken } = req.body;
 		if (!refreshToken.length) {
-			return res.status(400).json({ err: "Refresh token is  mandatory!" });
+			return res.status(400).json({ err: 'Refresh token is  mandatory!' });
 		}
 		try {
 			// verifyrefresh token method verify token and give us the payload inside it
@@ -81,8 +83,8 @@ export class AuthController {
 
 			const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
 
-			const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, "2m");
-			const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, "1d");
+			const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, '2m');
+			const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, '1d');
 
 			const user = await User.addRefreshToken(validUser._id, newRefreshToken);
 
@@ -95,46 +97,47 @@ export class AuthController {
 		}
 	};
 
-	forgotPassword = async (req: any, res: any) => {
+	forgotPassword = async (req: Request, res: Response) => {
 		const { email } = req.body;
-		if (!email) return res.status(400).json({ err: "Email is  mandatory!" });
+		if (!email) return res.status(400).json({ err: 'Email is  mandatory!' });
 		if (!validator.isEmail(email)) {
-			return res.json({ err: "Email is not valid" });
+			return res.json({ err: 'Email is not valid' });
 		}
 		const nodeMailer = new NodeMailer();
 		try {
 			const user = await User.findOne({ email });
-			//not finding a user in DB is not an error, so it will not go inside catch block, it needs to be handled here
+			// not finding a user in DB is not an error, so it will not go inside catch block, it needs to be handled here
 			if (user) {
-				const token = await getJwtToken(user, process.env.JWT_RESET_SECRET as string, "20m");
+				const token = await getJwtToken(user, process.env.JWT_RESET_SECRET as string, '20m');
 
 				const updatedUser = await user?.updateOne({ resetLink: token });
 
 				const mailData = {
 					to: user?.email,
-					subject: "Reset Password",
+					subject: 'Reset Password',
 					html: `
                         <h2>Reset Password using this link:</h2>
                         <p><a href="${process.env.CLIENT_URL}/resetpassword/${token}">Rest Password Link</a></p>
                     `,
 				};
 				if (nodeMailer.sendMail(mailData))
-					return res.status(200).json({ msg: "Please check your registered Email ID", token, updatedUser });
+					return res.status(200).json({ msg: 'Please check your registered Email ID', token, updatedUser });
+			} else {
+				return res.status(400).json({ err: 'Email Does not exist' });
 			}
-			return res.status(400).json({ err: "Email Does not exist" });
 		} catch (err) {
-			return res.status(400).json({ err: "Password reset Failed, try again" });
+			return res.status(400).json({ err: 'Password reset Failed, try again' });
 		}
 	};
 
-	resetPassword = async (req: any, res: any) => {
+	resetPassword = async (req: Request, res: Response) => {
 		const { newPassword, token } = req.body;
 
 		if (!newPassword || !token) {
-			return res.status(400).json({ err: "All fields are mandatory!" });
+			return res.status(400).json({ err: 'All fields are mandatory!' });
 		}
 		if (newPassword.length < 6) {
-			return res.json({ err: "Minimum password length is 6 characters" });
+			return res.json({ err: 'Minimum password length is 6 characters' });
 		}
 		try {
 			await verifyRefreshToken(token, <string>process.env.JWT_RESET_SECRET);
@@ -142,54 +145,54 @@ export class AuthController {
 			const salt = await bcrypt.genSalt();
 			const password = await bcrypt.hash(newPassword, salt);
 
-			let userInDb: IUser = <IUser>await User.findOneAndUpdate(
+			await User.findOneAndUpdate(
 				{
 					resetLink: token,
 				},
 				{
 					password,
-					resetLink: "",
+					resetLink: '',
 				},
 				{
 					new: true,
 					runValidators: true,
-					context: "query",
+					context: 'query',
 				},
 				(err, doc) => {
 					if (err || !doc) {
 						console.log(err);
-						res.status(400).json({ err: "Password update failed, try again!!" });
+						return res.status(400).json({ err: 'Password update failed, try again!!' });
 					}
-					res.status(200).json({ msg: "Password Updated Successfuly" });
+					return res.status(200).json({ msg: 'Password Updated Successfuly' });
 				}
 			);
 		} catch (err) {
-			res.status(400).json({ err: "Incorrect token sent - Authorization error" });
+			return res.status(400).json({ err: 'Incorrect token sent - Authorization error' });
 		}
 	};
 
-	sendOtpOnLogin = (req: Request, res: Response) => {
-		console.log("receiving phone number for opt");
-		//For development purposes we need to comment the below function
+	sendOtpOnLogin = (req: Request, res: Response): void => {
+		console.log('receiving phone number for opt');
+		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
 
 	// if correct userDocument arrives then no promise rejection occurs so
 	// before using thid mehtod handle userdoc null promise rejection method before call this one
-	generateTokensForUser = async (userDocument: any) => {
-		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, "10m");
-		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, "1d");
-		const user = await User.addRefreshToken(userDocument._id, refreshToken);
+	generateTokensForUser = async (userDocument: IUser): Promise<string> => {
+		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, '10m');
+		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, '1d');
+		await User.addRefreshToken(userDocument._id, refreshToken);
 		return accessToken;
 	};
 
-	findTenant = async (userDocument: any) => {
+	findTenant = async (userDocument: IUser): Promise<any> => {
 		const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
-			.populate({ path: "ownerId" })
-			.populate({ path: "roomId" })
-			.populate({ path: "userId" });
+			.populate({ path: 'ownerId' })
+			.populate({ path: 'roomId' })
+			.populate({ path: 'userId' });
 		if (tenantDocument == null) {
-			throw new Error("Unable to find User");
+			throw new Error('Unable to find User');
 		}
 
 		const {
@@ -197,25 +200,33 @@ export class AuthController {
 			ownerId: ownerObject,
 			buildId,
 			roomId: roomObject,
-			_id: tenantId,
 			joinDate,
 			rentDueDate,
 			securityAmount: security,
 		} = tenantDocument;
 
-		const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber, _id: ownerId } = <any>ownerObject;
-		const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = <any>userObject;
-		const { rent, type: roomType, floor, roomNo: roomNumber } = <any>roomObject;
+		const {
+			name: ownerName,
+			email: ownerEmail,
+			phoneNumber: ownerPhoneNumber,
+			_id: ownerId,
+		} = (ownerObject as unknown) as IUser;
+		const {
+			name: tenantName,
+			email: tenantEmail,
+			phoneNumber: tenantPhoneNumber,
+		} = (userObject as unknown) as IUser;
+		const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
 
-		//Finding building with ownerId and buildId
+		// Finding building with ownerId and buildId
 		const building = await Property.aggregate([
-			{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
-			{ $unwind: "$buildings" },
-			{ $match: { "buildings._id": buildId } },
+			{ $match: { ownerId: ownerId } },
+			{ $unwind: '$buildings' },
+			{ $match: { 'buildings._id': buildId } },
 		]);
 
 		if (building.length == 0) {
-			throw new Error("Unable to find property for user");
+			throw new Error('Unable to find property for user');
 		}
 
 		let result: TenantObj = {};
@@ -241,43 +252,46 @@ export class AuthController {
 		};
 		return new Promise((resolve, reject) => {
 			if (result == null) {
-				reject("Unable to find User");
+				reject('Unable to find User');
 			}
 			resolve(result);
 		});
 	};
 
-	findDashboardForUser = async (userDocument: any) => {
-		if (userDocument.userType == "Owner") {
+	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | null> => {
+		if (userDocument.userType == 'Owner') {
 			const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
-				path: "buildings.rooms",
+				path: 'buildings.rooms',
 				populate: {
-					path: "tenants",
+					path: 'tenants',
 					populate: {
-						path: "userId",
+						path: 'userId',
 					},
 				},
 			});
 			if (propertyDetails == null) {
-				throw new Error("Unable to find owner for user ");
+				throw new Error('Property details not added by owner yet');
 			}
 			return propertyDetails;
-		} else if (userDocument.userType == "Tenant") {
+		} else if (userDocument.userType == 'Tenant') {
 			const tenantDetails = await this.findTenant(userDocument);
 			return tenantDetails;
 		}
+		return null;
 	};
 
-	registerUser = async (phoneNumber: any) => {
+	registerUser = async (phoneNumber: string): Promise<any> => {
 		const user = await User.collection.insertOne({
 			_id: new mongoose.Types.ObjectId(),
 			phoneNumber,
+			userType: 'Owner',
 		});
 		if (user == null) {
-			throw new Error("Unable to register ");
+			throw new Error('Unable to register ');
 		}
-		const accessToken = await this.generateTokensForUser(user.ops);
-		return new Promise((resolve, reject) => {
+
+		const accessToken = await this.generateTokensForUser(user.ops[0]);
+		return new Promise((resolve) => {
 			resolve({
 				accessToken,
 				firstLogin: true,
@@ -285,17 +299,18 @@ export class AuthController {
 		});
 	};
 
-	findUser = async (phoneNumber: any, code: any): Promise<any> => {
+	findUser = async (phoneNumber: string, code: string) => {
 		// for production it comment
-		//const data=await verifyPhoneOtp(phoneNumber,code);
+		// const data=await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
 		if (userDocument == null) {
 			const user = await this.registerUser(phoneNumber);
 			return user;
 		}
+
 		const userDetails = await this.findDashboardForUser(userDocument);
 		const accessToken = await this.generateTokensForUser(userDocument);
-		return new Promise((resolve, reject) => {
+		return new Promise((resolve) => {
 			resolve({
 				userDetails,
 				accessToken,
@@ -305,17 +320,18 @@ export class AuthController {
 
 	phoneAuthenticate = (req: Request, res: Response) => {
 		const { phoneNumber, code } = req.body;
-		if (phoneNumber.length === 10 && code.length === 6) {
+
+		if (phoneNumber && code && phoneNumber.length === 10 && code.length === 6) {
 			this.findUser(phoneNumber, code)
-				.then(userDocument => {
+				.then((userDocument) => {
 					return res.status(200).json({ userDocument });
 				})
-				.catch(err => {
+				.catch((err) => {
 					console.log(err);
 					return res.status(400).json({ err: err.message });
 				});
 		} else {
-			res.status(400).json({ err: "Either  phone/code detail are incorrect" });
+			return res.status(400).json({ err: 'Invalid details' });
 		}
 	};
 }

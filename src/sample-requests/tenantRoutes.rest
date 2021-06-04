@@ -1,0 +1,23 @@
+
+POST http://localhost:3000/tenant/dashboard
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDNmZGQwMzVhNTI3YmM3YzhiODciLCJuYW1lIjoiaW1wYWxhIiwiZW1haWwiOiJpbXBhbGExMTExQDY3LmNvbSIsInBhc3N3b3JkIjoiJDJiJDEwJFdoVXg1YUc3VXBNYkowOC4vb2trWi5tbXZUUnlvQ1NqdzNzdmNiYzFFaTUxeE9WMnovc3ouIiwicGhvbmVOdW1iZXIiOiI4ODE0MDU4ODgxIiwiaXNPd25lciI6IlRlbmFudCIsInJlc2V0TGluayI6IiIsImlhdCI6MTYyMjczODA3OCwiZXhwIjoxNjIyNzM4Njc4LCJpc3MiOiJyZW50ZWUuY29tIn0.of-BDKX_whEUbQxuaQ-gYTf4RaOEL6_E59H4EVM2Pyk
+
+{
+    
+    "userId":"60b903fdd035a527bc7c8b87",
+    "name":"impala",
+    "email":"impala11@67.com",
+    "phoneNumber":"8814058881"
+    
+}
+
+###
+PUT http://localhost:3000/tenant/update-password
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDNmZGQwMzVhNTI3YmM3YzhiODciLCJuYW1lIjoiaW1wYWxhIiwiZW1haWwiOiJpbXBhbGExMTExQDY3LmNvbSIsInBhc3N3b3JkIjoiJDJiJDEwJFdoVXg1YUc3VXBNYkowOC4vb2trWi5tbXZUUnlvQ1NqdzNzdmNiYzFFaTUxeE9WMnovc3ouIiwicGhvbmVOdW1iZXIiOiI4ODE0MDU4ODgxIiwiaXNPd25lciI6IlRlbmFudCIsInJlc2V0TGluayI6IiIsImlhdCI6MTYyMjczODM3NCwiZXhwIjoxNjIyNzM4OTc0LCJpc3MiOiJyZW50ZWUuY29tIn0.H3khKx4FKeEuTttlpBVMBU4isAicMgWqqm0_lFmDPrs
+
+{
+   "email":"impala1111@67.com",
+   "password":"sahil1"
+}

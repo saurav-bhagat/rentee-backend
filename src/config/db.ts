@@ -1,6 +1,6 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
 
-export default async () => {
+export default async (): Promise<void> => {
 	await mongoose
 		.connect(process.env.DATABASE_URI as string, {
 			useNewUrlParser: true,
@@ -9,9 +9,9 @@ export default async () => {
 			useFindAndModify: false,
 		})
 		.then(() => {
-			console.log("Db Connection successful");
+			console.log('Db Connection successful');
 		})
-		.catch(err => {
-			console.log("Failed to connect to db: ", err);
+		.catch((err) => {
+			console.log('Failed to connect to db: ', err);
 		});
 };

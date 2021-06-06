@@ -1,18 +1,30 @@
 import { Request, Response } from 'express';
 import getJwtToken, { verifyRefreshToken } from '../utils/token';
+
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
+
 import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields } from '../utils/errorUtils';
+
 import NodeMailer from '../config/nodemailer';
 import validator from 'validator';
+
 import bcrypt from 'bcrypt';
-import Property from '../models/property/property';
-import Tenant from '../models/tenant/tenant';
-import { TenantObj } from './tenant.controller';
 import mongoose from 'mongoose';
+
 import { ITenant } from '../models/tenant/interface';
-import { IProperty, IRooms } from '../models/property/interface';
+import { IProperty } from '../models/property/interface';
+
+import { TenantController } from './tenant.controller';
+import { IMaintainer } from '../models/maintainer/interface';
+
+import { MaintainerController } from './MaintainerController';
+import { OwnerController } from './owner.controller';
+
+const tenantController: TenantController = new TenantController();
+const maintainerController: MaintainerController = new MaintainerController();
+const ownerController: OwnerController = new OwnerController();
 
 export class AuthController {
 	// Not using this functionality for now
@@ -186,96 +198,16 @@ export class AuthController {
 		return accessToken;
 	};
 
-	findTenant = async (userDocument: IUser): Promise<any> => {
-		const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
-			.populate({ path: 'ownerId' })
-			.populate({ path: 'roomId' })
-			.populate({ path: 'userId' });
-		if (tenantDocument == null) {
-			throw new Error('Unable to find User');
-		}
-
-		const {
-			userId: userObject,
-			ownerId: ownerObject,
-			buildId,
-			roomId: roomObject,
-			joinDate,
-			rentDueDate,
-			securityAmount: security,
-		} = tenantDocument;
-
-		const {
-			name: ownerName,
-			email: ownerEmail,
-			phoneNumber: ownerPhoneNumber,
-			_id: ownerId,
-		} = (ownerObject as unknown) as IUser;
-		const {
-			name: tenantName,
-			email: tenantEmail,
-			phoneNumber: tenantPhoneNumber,
-		} = (userObject as unknown) as IUser;
-		const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
-
-		// Finding building with ownerId and buildId
-		const building = await Property.aggregate([
-			{ $match: { ownerId: ownerId } },
-			{ $unwind: '$buildings' },
-			{ $match: { 'buildings._id': buildId } },
-		]);
-
-		if (building.length == 0) {
-			throw new Error('Unable to find property for user');
-		}
-
-		let result: TenantObj = {};
-
-		const { name: buildingName, address: buildingAddress } = <any>building;
-
-		result = {
-			tenantEmail,
-			tenantName,
-			tenantPhoneNumber,
-			roomNumber,
-			roomType,
-			rent,
-			floor,
-			joinDate,
-			rentDueDate,
-			security,
-			buildingName,
-			buildingAddress,
-			ownerName,
-			ownerEmail,
-			ownerPhoneNumber,
-		};
-		return new Promise((resolve, reject) => {
-			if (result == null) {
-				reject('Unable to find User');
-			}
-			resolve(result);
-		});
-	};
-
-	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | null> => {
+	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
 		if (userDocument.userType == 'Owner') {
-			const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
-				path: 'buildings.rooms',
-				populate: {
-					path: 'tenants',
-					populate: {
-						path: 'userId',
-					},
-				},
-			});
-			if (propertyDetails == null) {
-				throw new Error('Property details not added by owner yet');
-			}
-			return propertyDetails;
+			const ownerDetails = await ownerController.findOwner(userDocument);
+			return ownerDetails;
 		} else if (userDocument.userType == 'Tenant') {
-			const tenantDetails = await this.findTenant(userDocument);
+			const tenantDetails = await tenantController.findTenant(userDocument);
 			return tenantDetails;
+		} else if (userDocument.userType == 'Maintainer') {
+			const maintainerDetails = await maintainerController.findMaintainer(userDocument);
+			return maintainerDetails;
 		}
 		return null;
 	};
@@ -294,6 +226,8 @@ export class AuthController {
 		return new Promise((resolve) => {
 			resolve({
 				accessToken,
+				// pls remove it only for development
+				user: user.ops[0],
 				firstLogin: true,
 			});
 		});

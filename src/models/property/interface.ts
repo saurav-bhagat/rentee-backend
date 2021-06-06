@@ -15,6 +15,7 @@ export interface IBuilding extends Document {
 	name: string;
 	address: string;
 	rooms: mongoose.Types.Array<Schema.Types.ObjectId>;
+	maintainerId: Schema.Types.ObjectId;
 }
 
 export interface IProperty extends Document {

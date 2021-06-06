@@ -17,9 +17,13 @@ Content-Type: application/json
 
 { 
       // owner phone number 
-      "phoneNumber":"9588500964",
-      // tenant phone number 
-      //"phoneNumber":"8814058881",
+     // "phoneNumber":"9588500964",
+     // maintianer 01
+      "phoneNumber":"7412589630",
+    // maintainer 02
+    //"phoneNumber":"1593578520",
+     // tenant phone number 
+    // "phoneNumber":"8814058881",
       "code":"604143"
 }
 

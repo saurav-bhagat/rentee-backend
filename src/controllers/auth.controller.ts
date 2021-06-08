@@ -19,7 +19,7 @@ import { IProperty } from '../models/property/interface';
 import { TenantController } from './tenant.controller';
 import { IMaintainer } from '../models/maintainer/interface';
 
-import { MaintainerController } from './MaintainerController';
+import { MaintainerController } from './maintainer.controller';
 import { OwnerController } from './owner.controller';
 
 const tenantController: TenantController = new TenantController();
@@ -221,7 +221,12 @@ export class AuthController {
 		if (user == null) {
 			throw new Error('Unable to register ');
 		}
-
+		// user.ops[0] is same doc when we create a user with User.create method
+		// but here we use insertOne which return doc with additional info
+		// but we want only user.ops[0] that's why use
+		// Note: if we don't use user.ops[0]
+		// our generateTokensForUser is no longer able to genrate a token
+		// because it expect a doc structure like User.create method create
 		const accessToken = await this.generateTokensForUser(user.ops[0]);
 		return new Promise((resolve) => {
 			resolve({

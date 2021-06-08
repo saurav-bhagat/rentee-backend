@@ -5,14 +5,18 @@ import Property from '../models/property/property';
 import User from '../models/user/User';
 
 import Tenant from '../models/tenant/tenant';
-import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
+import Maintainer from '../models/maintainer/maintainer';
 
+import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
 import randomstring from 'randomstring';
 
 import bcrypt from 'bcrypt';
-
 import validator from 'validator';
+
 import mongoose, { ObjectId } from 'mongoose';
+import { IProperty } from '../models/property/interface';
+
+import { IUser } from '../models/user/interface';
 
 export class OwnerController {
 	pong = (_req: Request, res: Response): void => {
@@ -39,26 +43,28 @@ export class OwnerController {
 			if (!validator.isEmail(email) || password.length < 6) {
 				return res.status(400).json({ err: 'Either email/password/phonenumber is not valid' });
 			}
+
+			// Updating Onwer basic info
 			try {
 				const salt = await bcrypt.genSalt();
 				const hashedPassword = await bcrypt.hash(password, salt);
 
 				await User.findByIdAndUpdate(
 					{ _id: ownerId },
-					{ name, email, password: hashedPassword },
+					{
+						name,
+						email,
+						password: hashedPassword,
+					},
 					{
 						new: true,
 						runValidators: true,
 						context: 'query',
 					}
 				);
-			} catch (error) {
-				return res.status(400).json({ err: formatDbError(error) });
-			}
 
-			const property = new Property({ ownerId });
+				const property = new Property({ ownerId });
 
-			try {
 				for (let i = 0; i < buildingsObj.length; i += 1) {
 					const tempRooms: Array<ObjectId> = [];
 					const building = buildingsObj[i];
@@ -69,13 +75,73 @@ export class OwnerController {
 						const roomDocument = await Room.create(room);
 						tempRooms.push(roomDocument._id);
 					}
-					property.buildings.push({
-						name: buildingName,
-						address: buildingAddress,
-						rooms: tempRooms,
-					});
+					// if maintainer is there for building from frontend
+					if (building.maintainerDetail) {
+						let maintainerInfo = building.maintainerDetail;
+
+						const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
+						// if maintainer is already register then only assign the id of him/her in building
+						if (isMaintainerPresent) {
+							property.buildings.push({
+								name: buildingName,
+								address: buildingAddress,
+								rooms: tempRooms,
+								maintainerId: isMaintainerPresent._id,
+							});
+						} else {
+							// create new maintainer
+							const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
+							const userType = 'Maintainer';
+							const password = maintainerPassword;
+							maintainerInfo = { ...maintainerInfo, userType, password };
+							const userDocOfMaintainer = await User.create(maintainerInfo);
+							property.buildings.push({
+								name: buildingName,
+								address: buildingAddress,
+								rooms: tempRooms,
+								maintainerId: userDocOfMaintainer._id,
+							});
+						}
+					}
+					// if maintainer is not there from frontend
+					else {
+						property.buildings.push({
+							name: buildingName,
+							address: buildingAddress,
+							rooms: tempRooms,
+						});
+					}
 				}
 				const properties = await property.save();
+
+				const builidingForMaintainer = properties.buildings;
+
+				for (let i = 0; i < builidingForMaintainer.length; i++) {
+					const builiding = builidingForMaintainer[i];
+					if (builiding.maintainerId) {
+						const maintainerIdInBuilding = builiding.maintainerId;
+
+						// maintainer model getting updated with maintainer-specific details if present.
+						const isMaintainer = await Maintainer.findOneAndUpdate(
+							{ userId: maintainerIdInBuilding },
+							{ $push: { buildings: builiding._id } }
+						);
+
+						// maintainer model getting saved for the first time with maintainer-specific details.
+						if (!isMaintainer) {
+							const buildingIdArray: Array<ObjectId> = [];
+							buildingIdArray.push(builiding._id);
+							const doc = {
+								ownerId,
+								userId: maintainerIdInBuilding,
+								joinDate: new Date(),
+								buildings: buildingIdArray,
+							};
+							const maintainerDoc = await Maintainer.create(doc);
+						}
+					}
+				}
+
 				return res.status(200).json({ properties });
 			} catch (error) {
 				return res.status(400).json({ err: formatDbError(error) });
@@ -187,5 +253,21 @@ export class OwnerController {
 		} else {
 			return res.status(403).json({ err: 'Not Authorized' });
 		}
+	};
+
+	findOwner = async (userDocument: IUser): Promise<IProperty | null> => {
+		const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
+			path: 'buildings.rooms',
+			populate: {
+				path: 'tenants',
+				populate: {
+					path: 'userId',
+				},
+			},
+		});
+		if (propertyDetails == null) {
+			throw new Error('Property details not added by owner yet');
+		}
+		return propertyDetails;
 	};
 }

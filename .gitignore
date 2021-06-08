@@ -9,6 +9,10 @@
 /.pnp
 .pnp.js
 
+
+# testing-routes
+/src/apis-request
+
 # testing
 /coverage
 

@@ -1,13 +1,13 @@
 POST http://localhost:3000/owner/add-property
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZWQwMzVhNTI3YmM3YzhiN2YiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI3Mzc3MjYsImV4cCI6MTYyMjczODMyNiwiaXNzIjoicmVudGVlLmNvbSJ9.LJqB7UgF6LL061vPnB5toCc5Cde5UdpVPExZuOQhOiM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGJjZGRmOWE5MWIyOTIzMGMzYzQyNjYiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI5OTAzMjksImV4cCI6MTYyMjk5MDkyOSwiaXNzIjoicmVudGVlLmNvbSJ9.dk8N87R9NBzYfpicpwKBtPVZdSpCELOz0NftjIb2OUg
 
 {   
-   "ownerId":"60b9033ed035a527bc7c8b7f",
+   "ownerId":"60bcddf9a91b29230c3c4266",
     "name":"jack",
     "email":"jack@cas.com",
     "password":"asdedd",
-    "buildingsObj":[
+   "buildingsObj":[
                   {
                       "name":"building1",
                       "address":"yamuna nagar",
@@ -21,7 +21,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZ
                                   "floor":"1",
                                   "roomNo":"2"
                                 }
-                             ]
+                             ],
+                       "maintainerDetail":{
+                            // "ownerId":"60bca35dab0ac0120c9bf3d2",
+                             "email":"sahil@gupta.com",
+                             "name":"sahildotgupta",
+                             "phoneNumber":"7412589630"
+                       }
                   },
                   {
                       "name":"building2",
@@ -36,7 +42,34 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZ
                                   "floor":"1",
                                   "roomNo":"2"
                                 }
-                             ]
+                             ],
+                        "maintainerDetail":{
+                            //"ownerId":"60bca35dab0ac0120c9bf3d2",
+                            "email":"sahil@gupta.com",
+                             "name":"sahildotgupta",
+                             "phoneNumber":"7412589630"
+                        }
+                  },
+                   {
+                      "name":"building3",
+                      "address":"delhi",
+                      "rooms":[{   "rent":1000,
+                                   "type":"1bhk",
+                                   "floor":"1",
+                                   "roomNo":"1"
+                                },
+                                { "rent":2000,
+                                  "type":"2bhk",
+                                  "floor":"1",
+                                  "roomNo":"2"
+                                }
+                             ],
+                       "maintainerDetail":{
+                            // "ownerId":"60bca35dab0ac0120c9bf3d2",
+                             "email":"yashik@gmail.com",
+                             "name":"yashikgupta",
+                             "phoneNumber":"1593578520"
+                       }
                   }
                ]
 
@@ -51,17 +84,25 @@ Content-Type: application/json
            "email":"impala1111@67.com",
            "phoneNumber":"8814058881",
             "securityAmount":"1000",
-            "ownerId":"60b9033ed035a527bc7c8b7f",
-            "buildId":"60b90370d035a527bc7c8b83",
-            "roomId":"60b90370d035a527bc7c8b81"
+            "ownerId":"60bcddf9a91b29230c3c4266",
+            "buildId":"60bcde20a91b29230c3c426b",
+            "roomId":"60bcde20a91b29230c3c4268"
 }
-
+//60ba3627d5385e1620041d03
 ###
 POST http://localhost:3000/owner/dashboard
 Content-Type: application/json
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGI5MDMzZWQwMzVhNTI3YmM3YzhiN2YiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI3Mzc3MjYsImV4cCI6MTYyMjczODMyNiwiaXNzIjoicmVudGVlLmNvbSJ9.LJqB7UgF6LL061vPnB5toCc5Cde5UdpVPExZuOQhOiM
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGJhNWU3YTQ3ZWZhNjMwY2MwMTQyYTciLCJwaG9uZU51bWJlciI6Ijg4MTQwNTg4ODEiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI4MjY2MTgsImV4cCI6MTYyMjgyNzIxOCwiaXNzIjoicmVudGVlLmNvbSJ9.zhSf5A1FmpIsNBhY17tlo5FL0_RK80Xa24ZLKZ8S1uc
 
 {
-  "ownerId":"60b9033ed035a527bc7c8b7f"
+  "ownerId":"60ba5deb47efa630cc014296"
 
+}
+
+###
+GET http://localhost:3000/owner/ping
+Content-Type: application/json
+
+{
+    "phoneNumber":"990691261"
 }

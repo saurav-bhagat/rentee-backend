@@ -80,7 +80,7 @@ export class OwnerController {
 						let maintainerInfo = building.maintainerDetail;
 
 						const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
-						// if maintainer is already register then only assign the id of him/her
+						// if maintainer is already register then only assign the id of him/her in building
 						if (isMaintainerPresent) {
 							property.buildings.push({
 								name: buildingName,
@@ -121,11 +121,13 @@ export class OwnerController {
 					if (builiding.maintainerId) {
 						const maintainerIdInBuilding = builiding.maintainerId;
 
+						// maintainer model getting updated with maintainer-specific details if present.
 						const isMaintainer = await Maintainer.findOneAndUpdate(
 							{ userId: maintainerIdInBuilding },
 							{ $push: { buildings: builiding._id } }
 						);
 
+						// maintainer model getting saved for the first time with maintainer-specific details.
 						if (!isMaintainer) {
 							const buildingIdArray: Array<ObjectId> = [];
 							buildingIdArray.push(builiding._id);

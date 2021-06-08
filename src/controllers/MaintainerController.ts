@@ -5,142 +5,138 @@ import Rooms from '../models/property/rooms';
 import { IUser } from '../models/user/interface';
 
 import { ITenant } from '../models/tenant/interface';
-import { IBuilding } from '../models/property/interface';
+import { IBuilding, IRooms } from '../models/property/interface';
+import { ObjectId } from 'mongoose';
 
-export interface maintainerObject {
+export interface IMaintainerObject {
 	ownerName?: string;
 	ownerEmail?: string;
 	ownerPhoneNumber?: string;
 	maintainerName?: string;
 	maintainerEmail?: string;
 	maintainerPhoneNumber?: string;
-	build?: Array<buildingObject>;
+	build?: Array<IBuildingObject>;
 }
 
-export interface buildingObject {
+export interface IBuildingObject {
 	buildingName?: string;
 	buildingAddress?: string;
-	rooms?: Array<roomObject>;
+	rooms?: Array<IRoomObject>;
 }
 
-export interface roomObject {
+export interface IRoomObject {
 	roomType?: string;
 	floor?: string;
 	roomNo?: number;
-	tenants?: Array<tenantObject>;
+	tenants?: Array<ITenanatObject>;
 }
 
-export interface tenantObject {
+export interface ITenanatObject {
 	tenantName?: string;
 	tenantEmail?: string;
 	tenantPhoneNumber?: string;
 }
 
 export class MaintainerController {
+	getTenantInfo = (room: IRooms) => {
+		const tenants = (room.tenants as unknown) as Array<ITenant>;
+		const tenantInfoArray: Array<ITenanatObject> = [];
+
+		if (tenants.length) {
+			for (let k = 0; k < tenants.length; k++) {
+				const tenantAsUser = (tenants[k].userId as unknown) as IUser;
+				let tenantInfo: ITenanatObject = {};
+
+				const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = tenantAsUser;
+
+				tenantInfo = {
+					tenantName,
+					tenantEmail,
+					tenantPhoneNumber,
+				};
+
+				tenantInfoArray.push(tenantInfo);
+			}
+		}
+
+		return tenantInfoArray;
+	};
+	getRoomInfo = async (roomId: ObjectId) => {
+		let roomInfo: IRoomObject = {};
+		const _id = roomId;
+
+		const room = await Rooms.findOne(_id).populate({
+			path: 'tenants',
+			populate: {
+				path: 'userId',
+			},
+		});
+
+		if (room) {
+			const { type: roomType, floor, roomNo } = room;
+			const tenantInfoArray = this.getTenantInfo(room);
+
+			roomInfo = {
+				roomType,
+				floor,
+				roomNo,
+				tenants: tenantInfoArray,
+			};
+		}
+		return roomInfo;
+	};
+	getBuildingInfo = async (building: IBuilding) => {
+		let buildingInfo: IBuildingObject = {};
+		const { name: buildingName, address: buildingAddress } = building;
+
+		const roomInfoArray: Array<IRoomObject> = [];
+
+		const roomArray = building.rooms;
+		for (let j = 0; j < roomArray.length; j++) {
+			const roomInfo = await this.getRoomInfo(roomArray[j]);
+			roomInfoArray.push(roomInfo);
+		}
+
+		buildingInfo = {
+			buildingAddress,
+			buildingName,
+			rooms: roomInfoArray,
+		};
+		return buildingInfo;
+	};
 	findMaintainer = async (userDocument: IUser): Promise<any> => {
 		const maintainerDoc = await Maintainer.findOne({ userId: userDocument._id })
-			.populate({
-				path: 'userId',
-			})
-			.populate({
-				path: 'ownerId',
-			});
+			.populate({ path: 'userId' })
+			.populate({ path: 'ownerId' });
 
 		if (maintainerDoc == null) {
 			throw new Error('Maintainer doc not found!');
 		}
+
 		const ownerId = ((maintainerDoc?.ownerId as unknown) as IUser)._id;
 		const property = await Property.findOne({ ownerId: ownerId });
 
-		const builds: Array<IBuilding> = [];
-		let maintainerResObj: maintainerObject = {};
+		let maintainerResObj: IMaintainerObject = {};
 
 		if (property && maintainerDoc) {
-			const buildings = property.buildings;
-
-			for (let i = 0; i < buildings.length; i++) {
-				const build = buildings[i];
-
-				if (build.maintainerId.toString() == userDocument._id.toString()) {
-					builds.push(build);
-				}
-			}
-
+			let builds: Array<IBuilding> = [];
+			builds = property.buildings.filter(
+				(building) => building.maintainerId.toString() === userDocument._id.toString()
+			);
 			const ownerDetails = (maintainerDoc.ownerId as unknown) as IUser;
-			const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber } = ownerDetails;
 
+			const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber } = ownerDetails;
 			const maintainerDetails = (maintainerDoc.userId as unknown) as IUser;
+
 			const {
 				name: maintainerName,
 				email: maintainerEmail,
 				phoneNumber: maintainerPhoneNumber,
 			} = maintainerDetails;
-
-			const buildingInfoForMaintainer: Array<buildingObject> = [];
+			const buildingInfoForMaintainer: Array<IBuildingObject> = [];
 
 			for (let i = 0; i < builds.length; i++) {
-				let buildingInfo: buildingObject = {};
-				const roomInfoArray: Array<roomObject> = [];
-
-				const b = builds[i];
-				const { name: buildingName, address: buildingAddress } = builds[i];
-
-				const roomArray = b.rooms;
-				for (let j = 0; j < roomArray.length; j++) {
-					let roomInfo: roomObject = {};
-					const _id = roomArray[j];
-
-					const result = await Rooms.findOne(_id).populate({
-						path: 'tenants',
-						populate: {
-							path: 'userId',
-						},
-					});
-
-					if (result) {
-						const { type: roomType, floor, roomNo } = result;
-
-						const tenantsTempObj = (result.tenants as unknown) as Array<ITenant>;
-						const tenantInfoArray: Array<tenantObject> = [];
-
-						if (tenantsTempObj.length) {
-							for (let k = 0; k < tenantsTempObj.length; k++) {
-								const userInfoInTenantAsUserId = (tenantsTempObj[i].userId as unknown) as IUser;
-								let tenantInfo: tenantObject = {};
-
-								const {
-									name: tenantName,
-									email: tenantEmail,
-									phoneNumber: tenantPhoneNumber,
-								} = userInfoInTenantAsUserId;
-
-								tenantInfo = {
-									tenantName,
-									tenantEmail,
-									tenantPhoneNumber,
-								};
-
-								tenantInfoArray.push(tenantInfo);
-							}
-						}
-
-						roomInfo = {
-							roomType,
-							floor,
-							roomNo,
-							tenants: tenantInfoArray,
-						};
-
-						roomInfoArray.push(roomInfo);
-					}
-				}
-
-				buildingInfo = {
-					buildingAddress,
-					buildingName,
-					rooms: roomInfoArray,
-				};
-
+				const buildingInfo = await this.getBuildingInfo(builds[i]);
 				buildingInfoForMaintainer.push(buildingInfo);
 			}
 

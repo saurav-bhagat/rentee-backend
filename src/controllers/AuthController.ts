@@ -226,8 +226,6 @@ export class AuthController {
 		return new Promise((resolve) => {
 			resolve({
 				accessToken,
-				// pls remove it only for development
-				user: user.ops[0],
 				firstLogin: true,
 			});
 		});

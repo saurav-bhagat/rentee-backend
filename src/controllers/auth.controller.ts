@@ -4,6 +4,8 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
 
+// for development import is comment for production it will uncomment
+// because es lint show warning
 import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields } from '../utils/errorUtils';
 
@@ -16,15 +18,11 @@ import mongoose from 'mongoose';
 import { ITenant } from '../models/tenant/interface';
 import { IProperty } from '../models/property/interface';
 
-import { TenantUtils } from './tenant';
+import { findTenant } from './tenant';
 import { IMaintainer } from '../models/maintainer/interface';
 
-import { ReadMaintainer } from '../controllers/maintainer';
-import { OwnerUtils } from '../controllers/owner';
-
-const tenantUtils: TenantUtils = new TenantUtils();
-const readMaintainer: ReadMaintainer = new ReadMaintainer();
-const ownerUtils: OwnerUtils = new OwnerUtils();
+import { findMaintainer } from '../controllers/maintainer';
+import { findOwner } from '../controllers/owner';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -200,13 +198,13 @@ export class AuthController {
 
 	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
 		if (userDocument.userType == 'Owner') {
-			const ownerDetails = await ownerUtils.findOwner(userDocument);
+			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
 		} else if (userDocument.userType == 'Tenant') {
-			const tenantDetails = await tenantUtils.findTenant(userDocument);
+			const tenantDetails = await findTenant(userDocument);
 			return tenantDetails;
 		} else if (userDocument.userType == 'Maintainer') {
-			const maintainerDetails = await readMaintainer.findMaintainer(userDocument);
+			const maintainerDetails = await findMaintainer(userDocument);
 			return maintainerDetails;
 		}
 		return null;

@@ -13,136 +13,130 @@ import bcrypt from 'bcrypt';
 import validator from 'validator';
 import { ObjectId } from 'mongoose';
 
-export class CreateOwnerProperty {
-	pong = (_req: Request, res: Response): void => {
-		res.status(200).send('pong');
-	};
+// owner add properties after signup
+export const addOwnerProperty = async (req: Request, res: Response) => {
+	if (req.isAuth) {
+		const { ownerId, buildingsObj, name, email, password } = req.body;
+		const userData = { name, email, password };
+		if (!ownerId || !verifyObjectId([ownerId])) {
+			return res.status(400).json({ err: 'Incorrect owner detail' });
+		}
 
-	// owner add properties after signup
-	addOwnerProperty = async (req: Request, res: Response) => {
-		if (req.isAuth) {
-			const { ownerId, buildingsObj, name, email, password } = req.body;
-			const userData = { name, email, password };
-			if (!ownerId || !verifyObjectId([ownerId])) {
-				return res.status(400).json({ err: 'Incorrect owner detail' });
-			}
+		if (buildingsObj === undefined || buildingsObj.length === 0) {
+			return res.status(400).json({ err: 'Properties data is missing' });
+		}
 
-			if (buildingsObj === undefined || buildingsObj.length === 0) {
-				return res.status(400).json({ err: 'Properties data is missing' });
-			}
+		if (isEmptyFields(userData)) {
+			return res.status(400).json({ err: 'All fields are mandatory!' });
+		}
 
-			if (isEmptyFields(userData)) {
-				return res.status(400).json({ err: 'All fields are mandatory!' });
-			}
+		if (!validator.isEmail(email) || password.length < 6) {
+			return res.status(400).json({ err: 'Either email/password/phonenumber is not valid' });
+		}
 
-			if (!validator.isEmail(email) || password.length < 6) {
-				return res.status(400).json({ err: 'Either email/password/phonenumber is not valid' });
-			}
+		// Updating Onwer basic info
+		try {
+			const salt = await bcrypt.genSalt();
+			const hashedPassword = await bcrypt.hash(password, salt);
 
-			// Updating Onwer basic info
-			try {
-				const salt = await bcrypt.genSalt();
-				const hashedPassword = await bcrypt.hash(password, salt);
+			await User.findByIdAndUpdate(
+				{ _id: ownerId },
+				{
+					name,
+					email,
+					password: hashedPassword,
+				},
+				{
+					new: true,
+					runValidators: true,
+					context: 'query',
+				}
+			);
 
-				await User.findByIdAndUpdate(
-					{ _id: ownerId },
-					{
-						name,
-						email,
-						password: hashedPassword,
-					},
-					{
-						new: true,
-						runValidators: true,
-						context: 'query',
-					}
-				);
+			const property = new Property({ ownerId });
 
-				const property = new Property({ ownerId });
+			for (let i = 0; i < buildingsObj.length; i += 1) {
+				const tempRooms: Array<ObjectId> = [];
+				const building = buildingsObj[i];
+				const { name: buildingName, address: buildingAddress } = building;
 
-				for (let i = 0; i < buildingsObj.length; i += 1) {
-					const tempRooms: Array<ObjectId> = [];
-					const building = buildingsObj[i];
-					const { name: buildingName, address: buildingAddress } = building;
+				for (let j = 0; j < building.rooms.length; j += 1) {
+					const room = building.rooms[j];
+					const roomDocument = await Room.create(room);
+					tempRooms.push(roomDocument._id);
+				}
+				// if maintainer is there for building from frontend
+				if (building.maintainerDetail) {
+					let maintainerInfo = building.maintainerDetail;
 
-					for (let j = 0; j < building.rooms.length; j += 1) {
-						const room = building.rooms[j];
-						const roomDocument = await Room.create(room);
-						tempRooms.push(roomDocument._id);
-					}
-					// if maintainer is there for building from frontend
-					if (building.maintainerDetail) {
-						let maintainerInfo = building.maintainerDetail;
-
-						const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
-						// if maintainer is already register then only assign the id of him/her in building
-						if (isMaintainerPresent) {
-							property.buildings.push({
-								name: buildingName,
-								address: buildingAddress,
-								rooms: tempRooms,
-								maintainerId: isMaintainerPresent._id,
-							});
-						} else {
-							// create new maintainer
-							const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
-							const userType = 'Maintainer';
-							const password = maintainerPassword;
-							maintainerInfo = { ...maintainerInfo, userType, password };
-							const userDocOfMaintainer = await User.create(maintainerInfo);
-							property.buildings.push({
-								name: buildingName,
-								address: buildingAddress,
-								rooms: tempRooms,
-								maintainerId: userDocOfMaintainer._id,
-							});
-						}
-					}
-					// if maintainer is not there from frontend
-					else {
+					const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
+					// if maintainer is already register then only assign the id of him/her in building
+					if (isMaintainerPresent) {
 						property.buildings.push({
 							name: buildingName,
 							address: buildingAddress,
 							rooms: tempRooms,
+							maintainerId: isMaintainerPresent._id,
+						});
+					} else {
+						// create new maintainer
+						const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
+						const userType = 'Maintainer';
+						const password = maintainerPassword;
+						maintainerInfo = { ...maintainerInfo, userType, password };
+						const userDocOfMaintainer = await User.create(maintainerInfo);
+						property.buildings.push({
+							name: buildingName,
+							address: buildingAddress,
+							rooms: tempRooms,
+							maintainerId: userDocOfMaintainer._id,
 						});
 					}
 				}
-				const properties = await property.save();
+				// if maintainer is not there from frontend
+				else {
+					property.buildings.push({
+						name: buildingName,
+						address: buildingAddress,
+						rooms: tempRooms,
+					});
+				}
+			}
+			const properties = await property.save();
 
-				const builidingForMaintainer = properties.buildings;
+			const builidingForMaintainer = properties.buildings;
 
-				for (let i = 0; i < builidingForMaintainer.length; i++) {
-					const builiding = builidingForMaintainer[i];
-					if (builiding.maintainerId) {
-						const maintainerIdInBuilding = builiding.maintainerId;
+			for (let i = 0; i < builidingForMaintainer.length; i++) {
+				const builiding = builidingForMaintainer[i];
+				if (builiding.maintainerId) {
+					const maintainerIdInBuilding = builiding.maintainerId;
 
-						// maintainer model getting updated with maintainer-specific details if present.
-						const isMaintainer = await Maintainer.findOneAndUpdate(
-							{ userId: maintainerIdInBuilding },
-							{ $push: { buildings: builiding._id } }
-						);
+					// maintainer model getting updated with maintainer-specific details if present.
+					const isMaintainer = await Maintainer.findOneAndUpdate(
+						{ userId: maintainerIdInBuilding },
+						{ $push: { buildings: builiding._id } }
+					);
 
-						// maintainer model getting saved for the first time with maintainer-specific details.
-						if (!isMaintainer) {
-							const buildingIdArray: Array<ObjectId> = [];
-							buildingIdArray.push(builiding._id);
-							const doc = {
-								ownerId,
-								userId: maintainerIdInBuilding,
-								joinDate: new Date(),
-								buildings: buildingIdArray,
-							};
-							const maintainerDoc = await Maintainer.create(doc);
-						}
+					// maintainer model getting saved for the first time with maintainer-specific details.
+					if (!isMaintainer) {
+						const buildingIdArray: Array<ObjectId> = [];
+						buildingIdArray.push(builiding._id);
+						const doc = {
+							ownerId,
+							userId: maintainerIdInBuilding,
+							joinDate: new Date(),
+							buildings: buildingIdArray,
+						};
+						const maintainerDoc = await Maintainer.create(doc);
 					}
 				}
-
-				return res.status(200).json({ properties });
-			} catch (error) {
-				return res.status(400).json({ err: formatDbError(error) });
 			}
-		} else {
-			return res.status(403).json({ err: 'Not Authorized' });
+
+			return res.status(200).json({ properties });
+		} catch (error) {
+			return res.status(400).json({ err: formatDbError(error) });
 		}
-	};
-}
+	} else {
+		return res.status(403).json({ err: 'Not Authorized' });
+	}
+};

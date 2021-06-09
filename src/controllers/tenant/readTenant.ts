@@ -25,75 +25,71 @@ export interface TenantObj {
 	ownerPhoneNumber?: string;
 }
 
-export class ReadTenant {
-	// Tenant dashboard details
-	tenantInfo = async (req: Request, res: Response) => {
-		const { userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = req.body;
+// Tenant dashboard details
+export const tenantInfo = async (req: Request, res: Response) => {
+	const { userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = req.body;
 
-		if (!verifyObjectId([userId]) || !req.isAuth) {
-			res.status(403).json({ err: 'Not Authorized' });
-		}
+	if (!verifyObjectId([userId]) || !req.isAuth) {
+		res.status(403).json({ err: 'Not Authorized' });
+	}
 
-		// finding a tenant with userId
-		const tenantDocument = await Tenant.findOne({ userId })
-			.populate({ path: 'ownerId' })
-			.populate({ path: 'roomId' });
+	// finding a tenant with userId
+	const tenantDocument = await Tenant.findOne({ userId }).populate({ path: 'ownerId' }).populate({ path: 'roomId' });
 
-		if (tenantDocument) {
-			const {
-				ownerId: ownerObject,
-				buildId,
-				roomId: roomObject,
-				joinDate,
-				rentDueDate,
-				securityAmount: security,
-			} = tenantDocument;
+	if (tenantDocument) {
+		const {
+			ownerId: ownerObject,
+			buildId,
+			roomId: roomObject,
+			joinDate,
+			rentDueDate,
+			securityAmount: security,
+		} = tenantDocument;
 
-			const {
-				name: ownerName,
-				email: ownerEmail,
-				phoneNumber: ownerPhoneNumber,
-				_id,
-			} = (ownerObject as unknown) as IUser;
-			const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
+		const {
+			name: ownerName,
+			email: ownerEmail,
+			phoneNumber: ownerPhoneNumber,
+			_id,
+		} = (ownerObject as unknown) as IUser;
+		const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
 
-			const propertyDocument = await Property.findOne({ ownerId: _id });
+		const propertyDocument = await Property.findOne({ ownerId: _id });
 
-			let result: TenantObj = {};
+		let result: TenantObj = {};
 
-			if (propertyDocument) {
-				for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
-					const building = propertyDocument.buildings[i];
-					if (building._id.toString() == buildId.toString()) {
-						const { name: buildingName, address: buildingAddress } = building;
+		if (propertyDocument) {
+			for (let i = 0; i < propertyDocument.buildings.length; i += 1) {
+				const building = propertyDocument.buildings[i];
+				if (building._id.toString() == buildId.toString()) {
+					const { name: buildingName, address: buildingAddress } = building;
 
-						result = {
-							tenantEmail,
-							tenantName,
-							tenantPhoneNumber,
-							roomNumber,
-							roomType,
-							rent,
-							floor,
-							joinDate,
-							rentDueDate,
-							security,
-							buildingName,
-							buildingAddress,
-							ownerName,
-							ownerEmail,
-							ownerPhoneNumber,
-						};
-						return res.status(200).json({ result, msg: 'successfully fetch tenant' });
-					} else {
-						return res.status(400).json({ err: 'Building not found' });
-					}
+					result = {
+						tenantEmail,
+						tenantName,
+						tenantPhoneNumber,
+						roomNumber,
+						roomType,
+						rent,
+						floor,
+						joinDate,
+						rentDueDate,
+						security,
+						buildingName,
+						buildingAddress,
+						ownerName,
+						ownerEmail,
+						ownerPhoneNumber,
+					};
+					return res.status(200).json({ result, msg: 'successfully fetch tenant' });
+				} else {
+					return res.status(400).json({ err: 'Building not found' });
 				}
-			} else {
-				return res.status(400).json({ err: 'Owner not found' });
 			}
 		} else {
-			return res.status(400).json({ err: 'Tenant not registered' });
+			return res.status(400).json({ err: 'Owner not found' });
 		}
-	};
-}
+	} else {
+		return res.status(400).json({ err: 'Tenant not registered' });
+	}
+};

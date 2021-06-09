@@ -1,17 +1,17 @@
 import { Router } from 'express';
-import { OwnerController } from '../controllers/owner.controller';
+import { addOwnerProperty, tenantRegistration, getAllOwnerBuildings } from '../controllers/owner';
 
 const router: Router = Router();
 
-const ownerController: OwnerController = new OwnerController();
-
 // endpoints for owner
-router.get('/ping', ownerController.pong);
+router.get('/ping', (req, res) => {
+	res.status(200).send('owner ping');
+});
 
-router.post('/add-property', ownerController.addOwnerProperty);
+router.post('/add-property', addOwnerProperty);
 
-router.post('/register-tenant', ownerController.tenantRegistration);
+router.post('/register-tenant', tenantRegistration);
 
-router.post('/dashboard', ownerController.getAllOwnerBuildings);
+router.post('/dashboard', getAllOwnerBuildings);
 
 export default router;

@@ -16,15 +16,11 @@ import mongoose from 'mongoose';
 import { ITenant } from '../models/tenant/interface';
 import { IProperty } from '../models/property/interface';
 
-import { TenantController } from './tenant.controller';
+import { findTenant } from './tenant';
 import { IMaintainer } from '../models/maintainer/interface';
 
-import { MaintainerController } from './maintainer.controller';
-import { OwnerController } from './owner.controller';
-
-const tenantController: TenantController = new TenantController();
-const maintainerController: MaintainerController = new MaintainerController();
-const ownerController: OwnerController = new OwnerController();
+import { findMaintainer } from '../controllers/maintainer';
+import { findOwner } from '../controllers/owner';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -200,13 +196,13 @@ export class AuthController {
 
 	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
 		if (userDocument.userType == 'Owner') {
-			const ownerDetails = await ownerController.findOwner(userDocument);
+			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
 		} else if (userDocument.userType == 'Tenant') {
-			const tenantDetails = await tenantController.findTenant(userDocument);
+			const tenantDetails = await findTenant(userDocument);
 			return tenantDetails;
 		} else if (userDocument.userType == 'Maintainer') {
-			const maintainerDetails = await maintainerController.findMaintainer(userDocument);
+			const maintainerDetails = await findMaintainer(userDocument);
 			return maintainerDetails;
 		}
 		return null;

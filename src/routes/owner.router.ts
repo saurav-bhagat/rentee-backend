@@ -1,17 +1,19 @@
 import { Router } from 'express';
-import { OwnerController } from '../controllers/owner.controller';
+import { CreateOwnerProperty, OwnerUtils, ReadOnwerProperty } from '../controllers/owner';
 
 const router: Router = Router();
 
-const ownerController: OwnerController = new OwnerController();
+const createOwnerProperty: CreateOwnerProperty = new CreateOwnerProperty();
+const ownerUtils: OwnerUtils = new OwnerUtils();
+const readOnwerProperty: ReadOnwerProperty = new ReadOnwerProperty();
 
 // endpoints for owner
-router.get('/ping', ownerController.pong);
+router.get('/ping', createOwnerProperty.pong);
 
-router.post('/add-property', ownerController.addOwnerProperty);
+router.post('/add-property', createOwnerProperty.addOwnerProperty);
 
-router.post('/register-tenant', ownerController.tenantRegistration);
+router.post('/register-tenant', ownerUtils.tenantRegistration);
 
-router.post('/dashboard', ownerController.getAllOwnerBuildings);
+router.post('/dashboard', readOnwerProperty.getAllOwnerBuildings);
 
 export default router;

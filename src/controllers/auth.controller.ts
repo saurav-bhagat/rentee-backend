@@ -16,15 +16,15 @@ import mongoose from 'mongoose';
 import { ITenant } from '../models/tenant/interface';
 import { IProperty } from '../models/property/interface';
 
-import { TenantController } from './tenant.controller';
+import { TenantUtils } from './tenant';
 import { IMaintainer } from '../models/maintainer/interface';
 
-import { MaintainerController } from './maintainer.controller';
-import { OwnerController } from './owner.controller';
+import { ReadMaintainer } from '../controllers/maintainer';
+import { OwnerUtils } from '../controllers/owner';
 
-const tenantController: TenantController = new TenantController();
-const maintainerController: MaintainerController = new MaintainerController();
-const ownerController: OwnerController = new OwnerController();
+const tenantUtils: TenantUtils = new TenantUtils();
+const readMaintainer: ReadMaintainer = new ReadMaintainer();
+const ownerUtils: OwnerUtils = new OwnerUtils();
 
 export class AuthController {
 	// Not using this functionality for now
@@ -200,13 +200,13 @@ export class AuthController {
 
 	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
 		if (userDocument.userType == 'Owner') {
-			const ownerDetails = await ownerController.findOwner(userDocument);
+			const ownerDetails = await ownerUtils.findOwner(userDocument);
 			return ownerDetails;
 		} else if (userDocument.userType == 'Tenant') {
-			const tenantDetails = await tenantController.findTenant(userDocument);
+			const tenantDetails = await tenantUtils.findTenant(userDocument);
 			return tenantDetails;
 		} else if (userDocument.userType == 'Maintainer') {
-			const maintainerDetails = await maintainerController.findMaintainer(userDocument);
+			const maintainerDetails = await readMaintainer.findMaintainer(userDocument);
 			return maintainerDetails;
 		}
 		return null;

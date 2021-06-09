@@ -1,43 +1,16 @@
-import Maintainer from '../models/maintainer/maintainer';
-import Property from '../models/property/property';
+import Maintainer from '../../models/maintainer/maintainer';
+import Property from '../../models/property/property';
 
-import Rooms from '../models/property/rooms';
-import { IUser } from '../models/user/interface';
+import Rooms from '../../models/property/rooms';
+import { IUser } from '../../models/user/interface';
 
-import { ITenant } from '../models/tenant/interface';
-import { IBuilding, IRooms } from '../models/property/interface';
+import { ITenant } from '../../models/tenant/interface';
+import { IBuilding, IRooms } from '../../models/property/interface';
+
 import { ObjectId } from 'mongoose';
+import { ITenanatObject, IRoomObject, IBuildingObject, IMaintainerObject } from './maintainerTypes';
 
-export interface IMaintainerObject {
-	ownerName?: string;
-	ownerEmail?: string;
-	ownerPhoneNumber?: string;
-	maintainerName?: string;
-	maintainerEmail?: string;
-	maintainerPhoneNumber?: string;
-	build?: Array<IBuildingObject>;
-}
-
-export interface IBuildingObject {
-	buildingName?: string;
-	buildingAddress?: string;
-	rooms?: Array<IRoomObject>;
-}
-
-export interface IRoomObject {
-	roomType?: string;
-	floor?: string;
-	roomNo?: number;
-	tenants?: Array<ITenanatObject>;
-}
-
-export interface ITenanatObject {
-	tenantName?: string;
-	tenantEmail?: string;
-	tenantPhoneNumber?: string;
-}
-
-export class MaintainerController {
+export class ReadMaintainer {
 	getTenantInfo = (room: IRooms) => {
 		const tenants = (room.tenants as unknown) as Array<ITenant>;
 		const tenantInfoArray: Array<ITenanatObject> = [];

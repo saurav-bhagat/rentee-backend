@@ -1,9 +1,10 @@
 import { Router } from 'express';
-import { TenantController } from '../controllers/tenant.controller';
+import { ReadTenant, UpdateTenant } from '../controllers/tenant';
 
 const router: Router = Router();
 
-const tenantController: TenantController = new TenantController();
+const readTenant: ReadTenant = new ReadTenant();
+const updateTenant: UpdateTenant = new UpdateTenant();
 
 // endpoints for tenants
 
@@ -11,8 +12,8 @@ router.get('/ping', (req, res) => {
 	res.status(200).send('Tenant pong');
 });
 
-router.put('/update-password', tenantController.updateTenantPassword);
+router.put('/update-password', updateTenant.updateTenantPassword);
 
-router.post('/dashboard', tenantController.tenantInfo);
+router.post('/dashboard', readTenant.tenantInfo);
 
 export default router;

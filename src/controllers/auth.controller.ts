@@ -4,8 +4,6 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
 
-// for development import is comment for production it will uncomment
-// because es lint show warning
 import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields } from '../utils/errorUtils';
 

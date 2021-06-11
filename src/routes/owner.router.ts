@@ -1,5 +1,14 @@
 import { Router } from 'express';
-import { addOwnerProperty, tenantRegistration, getAllOwnerBuildings } from '../controllers/owner';
+import {
+	addOwnerProperty,
+	tenantRegistration,
+	getAllOwnerBuildings,
+	updateOnwerBuilding,
+	updateRoomDetails,
+	addBuildings,
+	addRooms,
+	addMaintainer,
+} from '../controllers/owner';
 
 const router: Router = Router();
 
@@ -13,5 +22,14 @@ router.post('/add-property', addOwnerProperty);
 router.post('/register-tenant', tenantRegistration);
 
 router.post('/dashboard', getAllOwnerBuildings);
+
+router.put('/update-building', updateOnwerBuilding);
+
+router.put('/update-roomsDetails', updateRoomDetails);
+
+router.put('/add-buildings', addBuildings);
+
+router.put('/add-rooms', addRooms);
+router.put('/add-maintainer', addMaintainer);
 
 export default router;

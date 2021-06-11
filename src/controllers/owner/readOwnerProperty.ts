@@ -21,6 +21,9 @@ export const getAllOwnerBuildings = (req: Request, res: Response) => {
 				},
 			})
 			.then((data) => {
+				if (!data) {
+					return res.status(400).json({ err: 'invalid owner' });
+				}
 				return res.status(200).json({ ownerBuildingDetails: data });
 			});
 	} else {

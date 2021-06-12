@@ -7,7 +7,7 @@ import { verifyObjectId } from '../../utils/errorUtils';
 export const getAllOwnerBuildings = (req: Request, res: Response) => {
 	const { ownerId } = req.body;
 	if (!ownerId || !verifyObjectId([ownerId])) {
-		return res.status(400).json({ err: 'Incorrect owner detail' });
+		return res.status(403).json({ err: 'Not authorized' });
 	}
 	if (req.isAuth) {
 		Property.findOne({ ownerId })
@@ -22,7 +22,7 @@ export const getAllOwnerBuildings = (req: Request, res: Response) => {
 			})
 			.then((data) => {
 				if (!data) {
-					return res.status(400).json({ err: 'invalid owner' });
+					return res.status(400).json({ err: 'Invalid owner detail' });
 				}
 				return res.status(200).json({ ownerBuildingDetails: data });
 			});

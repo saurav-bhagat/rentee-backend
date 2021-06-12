@@ -15,7 +15,7 @@ import randomstring from 'randomstring';
 export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, name, address } = req.body;
 
-	if (!verifyObjectId([ownerId, buildingId])) {
+	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 	const data: any = {};
@@ -35,14 +35,14 @@ export const updateOnwerBuilding = async (req: Request, res: Response) => {
 		if (!result) return res.status(400).json({ err: 'Invalid owner/building details' });
 		return res.status(200).json({ result });
 	} else {
-		return res.status(400).json({ err: 'Updating field cannot be empty' });
+		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
 };
 
 export const updateRoomDetails = async (req: Request, res: Response) => {
 	const { roomId, roomType: type, roomNo, floor, rent } = req.body;
 
-	if (!verifyObjectId([roomId])) {
+	if (!roomId || !verifyObjectId([roomId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 	const data: any = {};
@@ -54,22 +54,24 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 
 	if (!(Object.keys(data).length === 0)) {
 		const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
-		if (!result) return res.status(400).json({ err: 'Invalid room details' });
+		if (!result) return res.status(400).json({ err: 'Invalid room detail' });
 		return res.json({ result });
 	} else {
-		return res.json({ err: 'Updating field cannot be empty' });
+		return res.json({ err: 'Updating field mandatory!' });
 	}
 };
 
 export const addBuildings = async (req: Request, res: Response) => {
 	const { ownerId, buildings } = req.body;
 
-	if (!buildings || buildings.length === 0) {
-		return res.status(400).json({ err: 'Updating field cannot be empty' });
-	}
-	if (!verifyObjectId([ownerId])) {
+	if (!ownerId || !verifyObjectId([ownerId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
+
+	if (!buildings || buildings.length === 0) {
+		return res.status(400).json({ err: 'Updating field mandatory!' });
+	}
+
 	const result = await Property.findOneAndUpdate(
 		{ ownerId },
 		{
@@ -77,17 +79,17 @@ export const addBuildings = async (req: Request, res: Response) => {
 		},
 		{ new: true }
 	);
-	if (!result) return res.status(400).json({ err: 'Updating field cannot be empty' });
+	if (!result) return res.status(400).json({ err: 'Invalid owner detail' });
 	return res.status(200).json({ result });
 };
 
 export const addRooms = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, rooms } = req.body;
-	if (!verifyObjectId([ownerId, buildingId])) {
+	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 	if (!rooms || rooms.length == 0) {
-		return res.status(400).json({ err: 'Updating field cannot be empty' });
+		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
 	const roomIds: Array<ObjectId> = [];
 	for (let i = 0; i < rooms.length; i++) {
@@ -109,14 +111,14 @@ export const addRooms = async (req: Request, res: Response) => {
 		}
 	);
 	if (!result) {
-		return res.status(400).json({ err: 'Updating field cannot be empty' });
+		return res.status(400).json({ err: 'Invalid onwer/building details' });
 	}
 	return res.status(200).json({ result });
 };
 
 export const addMaintainer = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, email, phoneNumber, name } = req.body;
-	if (!verifyObjectId([ownerId, buildingId])) {
+	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not authorized' });
 	}
 
@@ -136,7 +138,7 @@ export const addMaintainer = async (req: Request, res: Response) => {
 			);
 			// role back (backlog )
 			if (!result) {
-				return res.status(400).json({ err: 'Either owner/building details is incorrect!' });
+				return res.status(400).json({ err: 'Invalid owner/building details' });
 			}
 
 			const maintainer = await Maintainer.findOneAndUpdate(

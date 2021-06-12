@@ -5,7 +5,7 @@ import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
 
 // import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
-import { formatDbError, isEmptyFields } from '../utils/errorUtils';
+import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
 
 import NodeMailer from '../config/nodemailer';
 import validator from 'validator';
@@ -271,6 +271,11 @@ export class AuthController {
 
 	updateUserBasicInfo = async (req: Request, res: Response) => {
 		const { _id, name, email, phoneNumber } = req.body;
+
+		if (!_id || !verifyObjectId([_id])) {
+			return res.status(403).json({ err: 'Not Authorized' });
+		}
+
 		if (email && !validator.isEmail(email)) {
 			return res.status(400).json({ err: 'email is not valid!' });
 		}
@@ -283,9 +288,12 @@ export class AuthController {
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
 		if (!(Object.keys(data).length == 0)) {
 			const result = await User.findOneAndUpdate({ _id }, data, { new: true });
+			if (!result) {
+				return res.status(400).json({ err: 'Invalid user detail' });
+			}
 			return res.status(200).json({ result });
 		} else {
-			return res.json({ err: 'Updating field empty' });
+			return res.status(400).json({ err: 'Updating field mandatory!' });
 		}
 	};
 }

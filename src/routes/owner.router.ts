@@ -25,7 +25,7 @@ router.post('/dashboard', getAllOwnerBuildings);
 
 router.put('/update-building', updateOnwerBuilding);
 
-router.put('/update-roomsDetails', updateRoomDetails);
+router.put('/update-rooms-details', updateRoomDetails);
 
 router.put('/add-buildings', addBuildings);
 

@@ -39,7 +39,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 			const salt = await bcrypt.genSalt();
 			const hashedPassword = await bcrypt.hash(password, salt);
 
-			await User.findByIdAndUpdate(
+			const ownerBasicInfo = await User.findByIdAndUpdate(
 				{ _id: ownerId },
 				{
 					name,
@@ -52,7 +52,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					context: 'query',
 				}
 			);
-
+			if (!ownerBasicInfo) return res.status(400).json({ err: 'failed to update owner basic info' });
 			const property = new Property({ ownerId });
 
 			for (let i = 0; i < buildingsObj.length; i += 1) {
@@ -127,7 +127,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 							joinDate: new Date(),
 							buildings: buildingIdArray,
 						};
-						const maintainerDoc = await Maintainer.create(doc);
+						await Maintainer.create(doc);
 					}
 				}
 			}

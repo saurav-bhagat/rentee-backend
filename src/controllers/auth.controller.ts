@@ -4,8 +4,8 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
 
-import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
-import { formatDbError, isEmptyFields } from '../utils/errorUtils';
+// import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
+import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
 
 import NodeMailer from '../config/nodemailer';
 import validator from 'validator';
@@ -180,7 +180,7 @@ export class AuthController {
 	};
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
-		console.log('receiving phone number for opt');
+		console.log('receiving phone number for opt', req, res);
 		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
@@ -233,6 +233,7 @@ export class AuthController {
 	};
 
 	findUser = async (phoneNumber: string, code: string) => {
+		console.log(code);
 		// for production it comment
 		// const data=await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
@@ -265,6 +266,34 @@ export class AuthController {
 				});
 		} else {
 			return res.status(400).json({ err: 'Invalid details' });
+		}
+	};
+
+	updateUserBasicInfo = async (req: Request, res: Response) => {
+		const { _id, name, email, phoneNumber } = req.body;
+
+		if (!_id || !verifyObjectId([_id])) {
+			return res.status(403).json({ err: 'Not Authorized' });
+		}
+
+		if (email && !validator.isEmail(email)) {
+			return res.status(400).json({ err: 'email is not valid!' });
+		}
+		if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+			return res.status(400).json({ err: 'Phone number is not valid!' });
+		}
+		const data: any = {};
+		if (name) data['name'] = name;
+		if (email) data['email'] = email;
+		if (phoneNumber) data['phoneNumber'] = phoneNumber;
+		if (!(Object.keys(data).length == 0)) {
+			const result = await User.findOneAndUpdate({ _id }, data, { new: true });
+			if (!result) {
+				return res.status(400).json({ err: 'Invalid user detail' });
+			}
+			return res.status(200).json({ result });
+		} else {
+			return res.status(400).json({ err: 'Updating field mandatory!' });
 		}
 	};
 }

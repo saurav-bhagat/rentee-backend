@@ -58,7 +58,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 	]);
 
 	if (building.length == 0) {
-		return res.status(400).json({ err: 'Unable to register tenant' });
+		return res.status(400).json({ err: 'Invalid onwer/building' });
 	}
 
 	const password = randomstring.generate({ length: 6, charset: 'abc' });

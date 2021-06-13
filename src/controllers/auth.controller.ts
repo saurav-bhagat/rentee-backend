@@ -180,7 +180,7 @@ export class AuthController {
 	};
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
-		console.log('receiving phone number for opt', req, res);
+		// console.log('receiving phone number for opt', req, res);
 		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
@@ -235,7 +235,7 @@ export class AuthController {
 	findUser = async (phoneNumber: string, code: string) => {
 		console.log(code);
 		// for production it comment
-		// const data=await verifyPhoneOtp(phoneNumber,code);
+		// await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
 		if (userDocument == null) {
 			const user = await this.registerUser(phoneNumber);

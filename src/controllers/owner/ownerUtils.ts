@@ -13,7 +13,7 @@ import User from '../../models/user/User';
 import Tenant from '../../models/tenant/tenant';
 import Room from '../../models/property/rooms';
 
-export const findOwner = async (userDocument: IUser): Promise<IProperty | null> => {
+export const findOwner = async (userDocument: IUser): Promise<IProperty | null | IUser> => {
 	const propertyDetails = await Property.findOne({ ownerId: userDocument._id }).populate({
 		path: 'buildings.rooms',
 		populate: {
@@ -24,7 +24,9 @@ export const findOwner = async (userDocument: IUser): Promise<IProperty | null> 
 		},
 	});
 	if (propertyDetails == null) {
-		throw new Error('Property details not added by owner yet');
+		// throw new Error('Property details not added by owner yet');
+		// TODO: return user details even if property is not added
+		return userDocument;
 	}
 	return propertyDetails;
 };
@@ -51,6 +53,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 		return res.status(400).json({ err: 'Incorrect details sent' });
 	}
 	// Finding building with ownerId and roomId
+	// this is to ensure that ownerID is associated with buildId
 	const building = await Property.aggregate([
 		{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
 		{ $unwind: '$buildings' },

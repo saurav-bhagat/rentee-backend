@@ -28,8 +28,8 @@ router.put('/update-building', updateOnwerBuilding);
 router.put('/update-rooms-details', updateRoomDetails);
 
 router.put('/add-buildings', addBuildings);
-
 router.put('/add-rooms', addRooms);
+
 router.put('/add-maintainer', addMaintainer);
 
 export default router;

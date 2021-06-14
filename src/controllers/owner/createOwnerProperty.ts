@@ -55,11 +55,13 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 			if (!ownerBasicInfo) return res.status(400).json({ err: 'failed to update owner basic info' });
 			const property = new Property({ ownerId });
 
+			// loop over the buildings
 			for (let i = 0; i < buildingsObj.length; i += 1) {
 				const tempRooms: Array<ObjectId> = [];
 				const building = buildingsObj[i];
 				const { name: buildingName, address: buildingAddress } = building;
 
+				// loop over rooms in a building
 				for (let j = 0; j < building.rooms.length; j += 1) {
 					const room = building.rooms[j];
 					const roomDocument = await Room.create(room);
@@ -70,7 +72,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					let maintainerInfo = building.maintainerDetail;
 
 					const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
-					// if maintainer is already register then only assign the id of him/her in building
+					// if maintainer is already registered then only store its id in building property
 					if (isMaintainerPresent) {
 						property.buildings.push({
 							name: buildingName,

@@ -90,19 +90,18 @@ export class AuthController {
 			const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
 			const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
-
 			const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, '2m');
 			const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, '1d');
 
 			const user = await User.addRefreshToken(validUser._id, newRefreshToken);
-
 			return res.status(200).json({
 				user,
 				accessToken: accessToken,
-				refreshToken: newRefreshToken
+				refreshToken: newRefreshToken,
 			});
 		} catch (error) {
-			return res.status(400).json({ err: error.message });
+			console.log('error is: ', error);
+			return res.status(400).json({ err: error });
 		}
 	};
 
@@ -196,7 +195,7 @@ export class AuthController {
 		return accessToken;
 	};
 
-	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
+	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null | IUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;

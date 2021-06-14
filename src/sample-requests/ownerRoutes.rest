@@ -3,10 +3,10 @@ Content-Type: application/json
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MGJjZGRmOWE5MWIyOTIzMGMzYzQyNjYiLCJwaG9uZU51bWJlciI6Ijk1ODg1MDA5NjQiLCJpc093bmVyIjoiT3duZXIiLCJpYXQiOjE2MjI5OTAzMjksImV4cCI6MTYyMjk5MDkyOSwiaXNzIjoicmVudGVlLmNvbSJ9.dk8N87R9NBzYfpicpwKBtPVZdSpCELOz0NftjIb2OUg
 
 {   
-   "ownerId":"60bcddf9a91b29230c3c4266",
+   "ownerId":"60c7826535253e625875e6e2",
     "name":"jack",
-    "email":"jack@cas.com",
-    "password":"asdedd",
+    "email":"test@gmail.com",
+    "password":"123456",
    "buildingsObj":[
                   {
                       "name":"building1",

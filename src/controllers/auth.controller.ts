@@ -82,8 +82,8 @@ export class AuthController {
 
 	handleRefreshToken = async (req: Request, res: Response) => {
 		const { refreshToken } = req.body;
-		if (!refreshToken.length) {
-			return res.status(400).json({ err: 'Refresh token is  mandatory!' });
+		if (!refreshToken || !refreshToken.length) {
+			return res.status(400).json({ err: 'Refresh token is  missing!' });
 		}
 		try {
 			// verifyrefresh token method verify token and give us the payload inside it
@@ -99,6 +99,7 @@ export class AuthController {
 			return res.status(200).json({
 				user,
 				accessToken: accessToken,
+				refreshToken: newRefreshToken
 			});
 		} catch (error) {
 			return res.status(400).json({ err: error.message });
@@ -190,7 +191,8 @@ export class AuthController {
 	generateTokensForUser = async (userDocument: IUser): Promise<string> => {
 		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, '10m');
 		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, '1d');
-		await User.addRefreshToken(userDocument._id, refreshToken);
+		const user = await User.addRefreshToken(userDocument._id, refreshToken);
+		console.log('User inside genereateToken: ', user);
 		return accessToken;
 	};
 

@@ -269,19 +269,8 @@ export class AuthController {
 		}
 	};
 
-	updateUserBasicInfo = async (req: Request, res: Response) => {
-		const { _id, name, email, phoneNumber } = req.body;
-
-		if (!_id || !verifyObjectId([_id])) {
-			return res.status(403).json({ err: 'Not Authorized' });
-		}
-
-		if (email && !validator.isEmail(email)) {
-			return res.status(400).json({ err: 'email is not valid!' });
-		}
-		if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
-			return res.status(400).json({ err: 'Phone number is not valid!' });
-		}
+	updateUserBasicInfoUtil = async (userObject: any) => {
+		const { name, email, _id, phoneNumber } = userObject;
 		const data: any = {};
 		if (name) data['name'] = name;
 		if (email) data['email'] = email;
@@ -289,11 +278,33 @@ export class AuthController {
 		if (!(Object.keys(data).length == 0)) {
 			const result = await User.findOneAndUpdate({ _id }, data, { new: true });
 			if (!result) {
-				return res.status(400).json({ err: 'Invalid user detail' });
+				throw Error('Invalid user detail');
 			}
-			return res.status(200).json({ result });
+			return result;
 		} else {
-			return res.status(400).json({ err: 'Updating field mandatory!' });
+			throw new Error('Updating field mandatory');
 		}
+	};
+	updateUserBasicInfo = (req: Request, res: Response) => {
+		const { _id, name, email, phoneNumber } = req.body;
+
+		if (!_id || !verifyObjectId([_id])) {
+			res.status(403).json({ err: 'Not Authorized' });
+		}
+
+		if (email && !validator.isEmail(email)) {
+			res.status(400).json({ err: 'email is not valid!' });
+		}
+		if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+			res.status(400).json({ err: 'Phone number is not valid!' });
+		}
+		const userObject = { _id, name, email, phoneNumber };
+		this.updateUserBasicInfoUtil(userObject)
+			.then((data) => {
+				res.status(200).json({ data });
+			})
+			.catch((err) => {
+				res.status(400).json({ err });
+			});
 	};
 }

@@ -8,6 +8,10 @@ import {
 	addBuildings,
 	addRooms,
 	addMaintainer,
+	removeTenant,
+	removeMaintainer,
+	removeBuilding,
+	removeRoom,
 } from '../controllers/owner';
 
 const router: Router = Router();
@@ -31,5 +35,10 @@ router.put('/add-buildings', addBuildings);
 
 router.put('/add-rooms', addRooms);
 router.put('/add-maintainer', addMaintainer);
+
+router.delete('/remove-tenant', removeTenant);
+router.delete('/remove-maintainer', removeMaintainer);
+router.delete('/remove-building', removeBuilding);
+router.delete('/remove-room', removeRoom);
 
 export default router;

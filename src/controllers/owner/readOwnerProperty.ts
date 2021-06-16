@@ -20,6 +20,7 @@ export const getAllOwnerBuildings = (req: Request, res: Response) => {
 					},
 				},
 			})
+			.populate({ path: 'buildings.maintainerId' })
 			.then((data) => {
 				if (!data) {
 					return res.status(400).json({ err: 'Invalid owner detail' });

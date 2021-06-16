@@ -22,10 +22,6 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 			return res.status(400).json({ err: 'Incorrect owner detail' });
 		}
 
-		if (buildingsObj === undefined || buildingsObj.length === 0) {
-			return res.status(400).json({ err: 'Properties data is missing' });
-		}
-
 		if (isEmptyFields(userData)) {
 			return res.status(400).json({ err: 'All fields are mandatory!' });
 		}
@@ -53,86 +49,122 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 				}
 			);
 			if (!ownerBasicInfo) return res.status(400).json({ err: 'failed to update owner basic info' });
-			const property = new Property({ ownerId });
 
-			for (let i = 0; i < buildingsObj.length; i += 1) {
-				const tempRooms: Array<ObjectId> = [];
-				const building = buildingsObj[i];
-				const { name: buildingName, address: buildingAddress } = building;
+			if (buildingsObj !== undefined && buildingsObj.length !== 0) {
+				// Create property for owner
+				const property = new Property({ ownerId });
 
-				for (let j = 0; j < building.rooms.length; j += 1) {
-					const room = building.rooms[j];
-					const roomDocument = await Room.create(room);
-					tempRooms.push(roomDocument._id);
-				}
-				// if maintainer is there for building from frontend
-				if (building.maintainerDetail) {
-					let maintainerInfo = building.maintainerDetail;
+				for (let i = 0; i < buildingsObj.length; i += 1) {
+					const tempRooms: Array<ObjectId> = [];
+					const building = buildingsObj[i];
+					const { name: buildingName, address: buildingAddress } = building;
 
-					const isMaintainerPresent = await User.findOne({ phoneNumber: maintainerInfo.phoneNumber });
-					// if maintainer is already register then only assign the id of him/her in building
-					if (isMaintainerPresent) {
+					// if room there
+					if (building.rooms && building.rooms.length) {
+						for (let j = 0; j < building.rooms.length; j += 1) {
+							const room = building.rooms[j];
+							const roomDocument = await Room.create(room);
+							tempRooms.push(roomDocument._id);
+						}
+					}
+
+					// if maintainer is there for building from frontend
+					if (building.maintainerDetail && Object.keys(building.maintainerDetail).length !== 0) {
+						let maintainerInfo = building.maintainerDetail;
+
+						const { email: maintainerEmail, phoneNumber: maintainerPhone } = maintainerInfo;
+
+						if (maintainerPhone && !validator.isMobilePhone(maintainerPhone)) {
+							return res.status(400).json({ err: `Invalid maintainer phone number ${maintainerPhone}` });
+						}
+						const isMaintainerPresent = await User.findOne({
+							phoneNumber: maintainerPhone,
+							userType: 'Maintainer',
+						});
+						// if maintainer is already register then only assign the id of him/her in building
+						if (isMaintainerPresent) {
+							property.buildings.push({
+								name: buildingName,
+								address: buildingAddress,
+								rooms: tempRooms,
+								maintainerId: isMaintainerPresent._id,
+							});
+						} else {
+							// create new maintainer
+							if (email && !validator.isEmail(email)) {
+								return res.status(400).json({ err: `Invalid maintainer email ${maintainerEmail}` });
+							}
+							const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
+							const userType = 'Maintainer';
+							const password = maintainerPassword;
+							maintainerInfo = { ...maintainerInfo, userType, password };
+							const userDocOfMaintainer = await User.create(maintainerInfo);
+							property.buildings.push({
+								name: buildingName,
+								address: buildingAddress,
+								rooms: tempRooms,
+								maintainerId: userDocOfMaintainer._id,
+							});
+						}
+					}
+					// if maintainer is not there from frontend
+					else {
 						property.buildings.push({
 							name: buildingName,
 							address: buildingAddress,
 							rooms: tempRooms,
-							maintainerId: isMaintainerPresent._id,
-						});
-					} else {
-						// create new maintainer
-						const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
-						const userType = 'Maintainer';
-						const password = maintainerPassword;
-						maintainerInfo = { ...maintainerInfo, userType, password };
-						const userDocOfMaintainer = await User.create(maintainerInfo);
-						property.buildings.push({
-							name: buildingName,
-							address: buildingAddress,
-							rooms: tempRooms,
-							maintainerId: userDocOfMaintainer._id,
 						});
 					}
 				}
-				// if maintainer is not there from frontend
-				else {
-					property.buildings.push({
-						name: buildingName,
-						address: buildingAddress,
-						rooms: tempRooms,
-					});
-				}
-			}
-			const properties = await property.save();
+				const properties = await property.save();
 
-			const builidingForMaintainer = properties.buildings;
+				const builidingForMaintainer = properties.buildings;
 
-			for (let i = 0; i < builidingForMaintainer.length; i++) {
-				const builiding = builidingForMaintainer[i];
-				if (builiding.maintainerId) {
-					const maintainerIdInBuilding = builiding.maintainerId;
+				for (let i = 0; i < builidingForMaintainer.length; i++) {
+					const builiding = builidingForMaintainer[i];
+					if (builiding.maintainerId) {
+						const maintainerIdInBuilding = builiding.maintainerId;
 
-					// maintainer model getting updated with maintainer-specific details if present.
-					const isMaintainer = await Maintainer.findOneAndUpdate(
-						{ userId: maintainerIdInBuilding },
-						{ $push: { buildings: builiding._id } }
-					);
+						// maintainer model getting updated with maintainer-specific details if present.
+						const isMaintainer = await Maintainer.findOneAndUpdate(
+							{ userId: maintainerIdInBuilding },
+							{ $push: { buildings: builiding._id } }
+						);
 
-					// maintainer model getting saved for the first time with maintainer-specific details.
-					if (!isMaintainer) {
-						const buildingIdArray: Array<ObjectId> = [];
-						buildingIdArray.push(builiding._id);
-						const doc = {
-							ownerId,
-							userId: maintainerIdInBuilding,
-							joinDate: new Date(),
-							buildings: buildingIdArray,
-						};
-						await Maintainer.create(doc);
+						// maintainer model getting saved for the first time with maintainer-specific details.
+						if (!isMaintainer) {
+							const buildingIdArray: Array<ObjectId> = [];
+							buildingIdArray.push(builiding._id);
+							const doc = {
+								ownerId,
+								userId: maintainerIdInBuilding,
+								joinDate: new Date(),
+								buildings: buildingIdArray,
+							};
+							await Maintainer.create(doc);
+						}
 					}
 				}
-			}
+				// Replace maintainer id
+				const propertydoc = await Property.findOne({ ownerId });
+				if (propertydoc) {
+					const { buildings } = propertydoc;
+					for (let i = 0; i < buildings.length; i++) {
+						const { maintainerId } = buildings[i];
+						if (maintainerId) {
+							const maintainerDoc = await Maintainer.findOne({ userId: maintainerId });
+							if (maintainerDoc) {
+								const { _id } = maintainerDoc;
+								propertydoc.buildings[i].maintainerId = _id;
+							}
+						}
+					}
+					const result = await propertydoc.save();
 
-			return res.status(200).json({ properties });
+					return res.status(200).json({ properties, result });
+				}
+			}
+			return res.status(200).json({ ownerBasicInfo });
 		} catch (error) {
 			return res.status(400).json({ err: formatDbError(error) });
 		}

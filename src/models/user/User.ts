@@ -18,6 +18,7 @@ const userSchema = new Schema(
 			unique: [true, 'Email is already registered'],
 			lowercase: true,
 			validate: [validator.isEmail, 'Please enter an valid email'],
+			sparse: true, // https://stackoverflow.com/questions/24430220/e11000-duplicate-key-error-index-in-mongodb-mongoose
 		},
 		password: {
 			type: String,

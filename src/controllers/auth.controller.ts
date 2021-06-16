@@ -82,26 +82,26 @@ export class AuthController {
 
 	handleRefreshToken = async (req: Request, res: Response) => {
 		const { refreshToken } = req.body;
-		if (!refreshToken.length) {
-			return res.status(400).json({ err: 'Refresh token is  mandatory!' });
+		if (!refreshToken || !refreshToken.length) {
+			return res.status(400).json({ err: 'Refresh token is  missing!' });
 		}
 		try {
 			// verifyrefresh token method verify token and give us the payload inside it
 			const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
 			const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
-
 			const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, '2m');
 			const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, '1d');
 
 			const user = await User.addRefreshToken(validUser._id, newRefreshToken);
-
 			return res.status(200).json({
 				user,
 				accessToken: accessToken,
+				refreshToken: newRefreshToken,
 			});
 		} catch (error) {
-			return res.status(400).json({ err: error.message });
+			console.log('error is: ', error);
+			return res.status(400).json({ err: error });
 		}
 	};
 
@@ -180,7 +180,7 @@ export class AuthController {
 	};
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
-		console.log('receiving phone number for opt', req, res);
+		// console.log('receiving phone number for opt', req, res);
 		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
@@ -190,11 +190,12 @@ export class AuthController {
 	generateTokensForUser = async (userDocument: IUser): Promise<string> => {
 		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, '10m');
 		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, '1d');
-		await User.addRefreshToken(userDocument._id, refreshToken);
+		const user = await User.addRefreshToken(userDocument._id, refreshToken);
+		console.log('User inside genereateToken: ', user);
 		return accessToken;
 	};
 
-	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null> => {
+	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null | IUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
@@ -235,7 +236,7 @@ export class AuthController {
 	findUser = async (phoneNumber: string, code: string) => {
 		console.log(code);
 		// for production it comment
-		// const data=await verifyPhoneOtp(phoneNumber,code);
+		// await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
 		if (userDocument == null) {
 			const user = await this.registerUser(phoneNumber);

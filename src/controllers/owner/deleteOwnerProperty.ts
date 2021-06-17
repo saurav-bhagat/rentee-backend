@@ -23,8 +23,8 @@ export const removeTenant = async (req: Request, res: Response) => {
 	if (userdoc) {
 		// step-2 remove tenant reference using pre remove hook in user model
 		// If u wondering about remove method see user model pre remove  hook
-		const result = await userdoc.remove();
-		return res.status(200).json({ result, msg: 'successfully deleted' });
+		await userdoc.remove();
+		return res.status(200).json({ msg: 'Tenant removed successfully!' });
 	} else {
 		return res.status(400).json({ err: 'Invalid tenant detail ' });
 	}
@@ -57,7 +57,7 @@ export const removeMaintainer = async (req: Request, res: Response) => {
 		if (!newResult) {
 			return res.status(400).json({ err: 'Invalid owner/building detail' });
 		}
-		return res.status(200).json({ msg: 'Maintainer removed successfully ! ' });
+		return res.status(200).json({ msg: 'Maintainer removed successfully!' });
 	} else {
 		return res.status(400).json({ err: 'Invalid maintainer detail ' });
 	}
@@ -91,11 +91,8 @@ export const removeBuilding = async (req: Request, res: Response) => {
 			}
 
 			// step-3 delete building from db
-			const deletedBuilding = await Property.findOneAndUpdate(
-				{ ownerId },
-				{ $pull: { buildings: { _id: buildingId } } }
-			);
-			return res.status(400).json({ deletedBuilding });
+			await Property.findOneAndUpdate({ ownerId }, { $pull: { buildings: { _id: buildingId } } });
+			return res.status(200).json({ msg: 'Building remove successfully!' });
 		} else {
 			return res.status(400).json({ err: 'Invalid building' });
 		}
@@ -127,7 +124,7 @@ export const removeRoom = async (req: Request, res: Response) => {
 			if (!result) {
 				return res.status(400).json({ err: 'Invalid owner/building detail ' });
 			}
-			return res.status(400).json({ msg: 'room removed successfully' });
+			return res.status(200).json({ msg: 'Room removed successfully!' });
 		} else {
 			return res.status(400).json({ err: 'Invalid room detail' });
 		}

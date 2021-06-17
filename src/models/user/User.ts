@@ -3,6 +3,8 @@ import validator from 'validator';
 import bcrypt from 'bcrypt';
 import uniqueValidator from 'mongoose-unique-validator';
 import { IUser, IModel } from './interface';
+import Tenant from '../tenant/tenant';
+import Rooms from '../property/rooms';
 
 const userSchema = new Schema(
 	{
@@ -49,6 +51,16 @@ userSchema.pre<IUser>('save', async function (next) {
 	const salt = await bcrypt.genSalt();
 	const plainText = this.get('password');
 	this.set('password', await bcrypt.hash(plainText, salt));
+	next();
+});
+
+// this method fire before doc remove
+userSchema.pre<IUser>('remove', async function (next) {
+	const tenantDetails = await Tenant.findOneAndDelete({ userId: this._id });
+	if (tenantDetails) {
+		const { roomId, _id } = tenantDetails;
+		await Rooms.updateOne({ _id: roomId }, { $pull: { tenants: _id } });
+	}
 	next();
 });
 

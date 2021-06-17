@@ -1,16 +1,10 @@
 import { Request, Response } from 'express';
-import { ObjectId } from 'mongoose';
-
-import validator from 'validator';
-import Maintainer from '../../models/maintainer/maintainer';
-
 import Property from '../../models/property/property';
+
 import Rooms from '../../models/property/rooms';
-
-import User from '../../models/user/User';
-import { formatDbError, verifyObjectId } from '../../utils/errorUtils';
-
-import randomstring from 'randomstring';
+import { verifyObjectId } from '../../utils/errorUtils';
+import validator from 'validator';
+import { addBuildingsUtil, addMaintainerUtil, addRoomsUtil } from './ownerUtils';
 
 export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, name, address } = req.body;
@@ -33,7 +27,7 @@ export const updateOnwerBuilding = async (req: Request, res: Response) => {
 			}
 		);
 		if (!result) return res.status(400).json({ err: 'Invalid owner/building details' });
-		return res.status(200).json({ result });
+		return res.status(200).json({ result, msg: 'Building detail updated successfully!' });
 	} else {
 		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
@@ -55,15 +49,14 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 	if (!(Object.keys(data).length === 0)) {
 		const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
 		if (!result) return res.status(400).json({ err: 'Invalid room detail' });
-		return res.json({ result });
+		return res.status(200).json({ result, msg: 'Room detail updated successfully!' });
 	} else {
-		return res.json({ err: 'Updating field mandatory!' });
+		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
 };
 
 export const addBuildings = async (req: Request, res: Response) => {
 	const { ownerId, buildings } = req.body;
-
 	if (!ownerId || !verifyObjectId([ownerId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
@@ -72,15 +65,13 @@ export const addBuildings = async (req: Request, res: Response) => {
 		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
 
-	const result = await Property.findOneAndUpdate(
-		{ ownerId },
-		{
-			$push: { buildings: { $each: buildings } },
-		},
-		{ new: true }
-	);
-	if (!result) return res.status(400).json({ err: 'Invalid owner detail' });
-	return res.status(200).json({ result });
+	const addBuildigDetails = { ownerId, buildings };
+
+	const result = await addBuildingsUtil(addBuildigDetails);
+	if (result) {
+		return res.status(200).json({ msg: 'Building added successfully!' });
+	}
+	return res.status(400).json({ err: 'Invalid owner' });
 };
 
 export const addRooms = async (req: Request, res: Response) => {
@@ -91,74 +82,29 @@ export const addRooms = async (req: Request, res: Response) => {
 	if (!rooms || rooms.length == 0) {
 		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
-	const roomIds: Array<ObjectId> = [];
-	for (let i = 0; i < rooms.length; i++) {
-		const room = rooms[i];
-		const roomDocument = await Rooms.create(room);
-		if (roomDocument) {
-			roomIds.push(roomDocument._id);
-		}
+	const addRoomDetail = { ownerId, buildingId, rooms };
+	const result = await addRoomsUtil(addRoomDetail);
+	if (result) {
+		return res.status(200).json({ msg: 'Room added succesfully!' });
 	}
-	const result = await Property.findOneAndUpdate(
-		{ ownerId, 'buildings._id': buildingId },
-		{
-			$push: {
-				'buildings.$.rooms': roomIds,
-			},
-		},
-		{
-			new: true,
-		}
-	);
-	if (!result) {
-		return res.status(400).json({ err: 'Invalid onwer/building details' });
-	}
-	return res.status(200).json({ result });
+	return res.status(400).json({ err: 'Invalid owner/building detail' });
 };
 
-export const addMaintainer = async (req: Request, res: Response) => {
+export const addMaintainer = (req: Request, res: Response) => {
 	const { ownerId, buildingId, email, phoneNumber, name } = req.body;
 	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
-		return res.status(403).json({ err: 'Not authorized' });
+		res.status(403).json({ err: 'Not authorized' });
 	}
 
 	if (!validator.isEmail(email) || !validator.isMobilePhone(phoneNumber)) {
-		return res.status(400).json({ err: 'Either email/phoneNumber not valid' });
+		res.status(400).json({ err: 'Either email/phoneNumber not valid' });
 	}
-	const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
-	const data = { name, email, phoneNumber, password: maintainerPassword };
-
-	try {
-		const maintainerDocument = await User.create(data);
-		if (maintainerDocument) {
-			const result = await Property.findOneAndUpdate(
-				{ ownerId, 'buildings._id': buildingId },
-				{ $set: { 'buildings.$.maintainerId': maintainerDocument._id } },
-				{ new: true }
-			);
-			// role back (backlog )
-			if (!result) {
-				return res.status(400).json({ err: 'Invalid owner/building details' });
-			}
-
-			const maintainer = await Maintainer.findOneAndUpdate(
-				{ userId: maintainerDocument._id },
-				{ $push: { buildings: buildingId } }
-			);
-			const buildingIdArray: Array<ObjectId> = [];
-			buildingIdArray.push(buildingId);
-			if (!maintainer) {
-				const doc = {
-					ownerId,
-					userId: maintainerDocument._id,
-					joinDate: new Date(),
-					buildings: buildingIdArray,
-				};
-				const maintainerDoc = await Maintainer.create(doc);
-				return res.status(200).json({ maintainerDoc, maintainerPassword });
-			}
-		}
-	} catch (err) {
-		return res.status(400).json({ err: formatDbError(err) });
-	}
+	const addMaintainerDetails = { ownerId, buildingId, email, phoneNumber, name };
+	addMaintainerUtil(addMaintainerDetails)
+		.then((data) => {
+			res.status(200).json({ msg: 'Mainter added successfully!' });
+		})
+		.catch((err) => {
+			res.status(400).json({ err });
+		});
 };

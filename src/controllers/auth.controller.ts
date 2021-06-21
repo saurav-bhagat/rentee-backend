@@ -21,6 +21,7 @@ import { IMaintainer } from '../models/maintainer/interface';
 
 import { findMaintainer } from '../controllers/maintainer';
 import { findOwner } from '../controllers/owner';
+import { BasicUser, OwnerDashoardDetail } from './owner/ownerTypes';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -101,7 +102,7 @@ export class AuthController {
 			});
 		} catch (error) {
 			console.log('error is: ', error);
-			return res.status(400).json({ err: error });
+			return res.status(403).json({ err: error });
 		}
 	};
 
@@ -168,7 +169,7 @@ export class AuthController {
 				},
 				(err, doc) => {
 					if (err || !doc) {
-						console.log(err);
+						console.log(err, doc);
 						return res.status(400).json({ err: 'Password update failed, try again!!' });
 					}
 					return res.status(200).json({ msg: 'Password Updated Successfuly' });
@@ -195,7 +196,9 @@ export class AuthController {
 		return accessToken;
 	};
 
-	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null | IUser> => {
+	findDashboardForUser = async (
+		userDocument: IUser
+	): Promise<ITenant | IProperty | IMaintainer | OwnerDashoardDetail | null | IUser | BasicUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
@@ -255,8 +258,13 @@ export class AuthController {
 
 	phoneAuthenticate = (req: Request, res: Response) => {
 		const { phoneNumber, code } = req.body;
-
-		if (phoneNumber && code && phoneNumber.length === 10 && code.length === 6) {
+		if (
+			phoneNumber &&
+			phoneNumber.length === 10 &&
+			validator.isMobilePhone(`+91${phoneNumber}`, 'en-IN') &&
+			code &&
+			code.length === 6
+		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {
 					return res.status(200).json({ userDocument });
@@ -277,9 +285,13 @@ export class AuthController {
 		if (email) data['email'] = email;
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
 		if (!(Object.keys(data).length == 0)) {
-			const result = await User.findOneAndUpdate({ _id }, data, { new: true });
+			const result = await User.findOneAndUpdate({ _id }, data, {
+				new: true,
+				runValidators: true,
+				context: 'query',
+			});
 			if (!result) {
-				throw Error('Invalid user detail');
+				throw new Error('Invalid user detail');
 			}
 			return result;
 		} else {
@@ -296,16 +308,18 @@ export class AuthController {
 		if (email && !validator.isEmail(email)) {
 			res.status(400).json({ err: 'email is not valid!' });
 		}
-		if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+		if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
 			res.status(400).json({ err: 'Phone number is not valid!' });
 		}
 		const userObject = { _id, name, email, phoneNumber };
 		this.updateUserBasicInfoUtil(userObject)
 			.then((data) => {
-				res.status(200).json({ data });
+				const { _id, name, email, phoneNumber, userType, refreshToken } = data;
+				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType, refreshToken };
+				res.status(200).json({ updatedUserInfo });
 			})
 			.catch((err) => {
-				res.status(400).json({ err });
+				res.status(400).json({ err: err.message });
 			});
 	};
 }

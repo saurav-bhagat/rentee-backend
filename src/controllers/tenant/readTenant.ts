@@ -29,6 +29,8 @@ export interface TenantObj {
 export const tenantInfo = async (req: Request, res: Response) => {
 	const { userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = req.body;
 
+	// exceptionn case for email,phoneNumber because it safely come from on user login
+
 	if (!verifyObjectId([userId]) || !req.isAuth) {
 		res.status(403).json({ err: 'Not Authorized' });
 	}

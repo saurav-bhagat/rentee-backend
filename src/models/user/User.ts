@@ -10,7 +10,7 @@ const userSchema = new Schema(
 	{
 		name: {
 			type: String,
-			required: [true, 'Please enter your name'],
+			required: [true, 'Please enter  name'],
 		},
 		email: {
 			type: String,

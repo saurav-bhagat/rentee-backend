@@ -55,7 +55,7 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 	}
 };
 
-export const addBuildings = async (req: Request, res: Response) => {
+export const addBuildings = (req: Request, res: Response) => {
 	const { ownerId, buildings } = req.body;
 	if (!ownerId || !verifyObjectId([ownerId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
@@ -67,14 +67,19 @@ export const addBuildings = async (req: Request, res: Response) => {
 
 	const addBuildigDetails = { ownerId, buildings };
 
-	const result = await addBuildingsUtil(addBuildigDetails);
-	if (result) {
-		return res.status(200).json({ msg: 'Building added successfully!' });
-	}
-	return res.status(400).json({ err: 'Invalid owner' });
+	addBuildingsUtil(addBuildigDetails)
+		.then((data) => {
+			if (data) {
+				return res.status(200).json({ data });
+			}
+			return res.status(400).json({ err: 'Invalid owner detail' });
+		})
+		.catch((err) => {
+			return res.status(400).json({ err });
+		});
 };
 
-export const addRooms = async (req: Request, res: Response) => {
+export const addRooms = (req: Request, res: Response) => {
 	const { ownerId, buildingId, rooms } = req.body;
 	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
@@ -83,11 +88,16 @@ export const addRooms = async (req: Request, res: Response) => {
 		return res.status(400).json({ err: 'Updating field mandatory!' });
 	}
 	const addRoomDetail = { ownerId, buildingId, rooms };
-	const result = await addRoomsUtil(addRoomDetail);
-	if (result) {
-		return res.status(200).json({ msg: 'Room added succesfully!' });
-	}
-	return res.status(400).json({ err: 'Invalid owner/building detail' });
+	addRoomsUtil(addRoomDetail)
+		.then((data) => {
+			if (data) {
+				return res.status(200).json({ msg: 'Room added succesfully!' });
+			}
+			return res.status(400).json({ err: 'Invalid owner/building detail' });
+		})
+		.catch((err) => {
+			return res.status(400).json({ err });
+		});
 };
 
 export const addMaintainer = (req: Request, res: Response) => {
@@ -96,13 +106,13 @@ export const addMaintainer = (req: Request, res: Response) => {
 		res.status(403).json({ err: 'Not authorized' });
 	}
 
-	if (!validator.isEmail(email) || !validator.isMobilePhone(phoneNumber)) {
+	if (!validator.isEmail(email) || !validator.isMobilePhone(`+91${phoneNumber}`, 'en-IN')) {
 		res.status(400).json({ err: 'Either email/phoneNumber not valid' });
 	}
 	const addMaintainerDetails = { ownerId, buildingId, email, phoneNumber, name };
 	addMaintainerUtil(addMaintainerDetails)
 		.then((data) => {
-			res.status(200).json({ msg: 'Mainter added successfully!' });
+			res.status(200).json({ msg: 'Maintainer added successfully!' });
 		})
 		.catch((err) => {
 			res.status(400).json({ err });

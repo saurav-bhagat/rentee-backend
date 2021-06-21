@@ -12,6 +12,7 @@ import bcrypt from 'bcrypt';
 
 import validator from 'validator';
 import { ObjectId } from 'mongoose';
+import { BasicUser } from './ownerTypes';
 
 // owner add properties after signup
 export const addOwnerProperty = async (req: Request, res: Response) => {
@@ -23,11 +24,11 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 		}
 
 		if (isEmptyFields(userData)) {
-			return res.status(400).json({ err: 'All fields are mandatory!' });
+			return res.status(400).json({ err: 'Either name/email/password is missing' });
 		}
 
 		if (!validator.isEmail(email) || password.length < 6) {
-			return res.status(400).json({ err: 'Either email/password/phonenumber is not valid' });
+			return res.status(400).json({ err: 'Either email/password is not valid' });
 		}
 
 		// Updating Onwer basic info
@@ -48,7 +49,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					context: 'query',
 				}
 			);
-			if (!ownerBasicInfo) return res.status(400).json({ err: 'failed to update owner basic info' });
+			if (!ownerBasicInfo) return res.status(400).json({ err: 'Invalid owner detail' });
 
 			if (buildingsObj !== undefined && buildingsObj.length !== 0) {
 				// Create property for owner
@@ -161,10 +162,14 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					}
 					const result = await propertydoc.save();
 
-					return res.status(200).json({ properties, result });
+					return res.status(200).json({ propertyDetails: result });
 				}
 			}
-			return res.status(200).json({ ownerBasicInfo });
+			if (ownerBasicInfo) {
+				const { _id, name, email, phoneNumber, userType, refreshToken } = ownerBasicInfo;
+				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType, refreshToken };
+				return res.status(200).json({ updatedUserInfo });
+			}
 		} catch (error) {
 			return res.status(400).json({ err: formatDbError(error) });
 		}

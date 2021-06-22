@@ -1,12 +1,11 @@
 import { ObjectId } from 'mongoose';
 
 export interface BasicUser {
-	_id: ObjectId;
-	name: string;
-	email: string;
-	phoneNumber: string;
-	userType: string;
-	refreshToken: string;
+	_id?: ObjectId;
+	name?: string;
+	email?: string;
+	phoneNumber?: string;
+	userType?: string;
 }
 
 export interface OwnerDashoardDetail {

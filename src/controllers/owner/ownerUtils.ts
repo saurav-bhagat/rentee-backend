@@ -44,8 +44,8 @@ export const findOwner = async (
 	if (propertyDetails == null) {
 		// throw new Error('Property details not added by owner yet');
 		// TODO: return user details even if property is not added
-		const { _id, name, email, phoneNumber, refreshToken, userType } = userDocument;
-		const userInfo: BasicUser = { _id, name, email, phoneNumber, userType, refreshToken };
+		const { _id, name, email, phoneNumber, userType } = userDocument;
+		const userInfo: BasicUser = { _id, name, email, phoneNumber, userType };
 
 		return userInfo;
 	}

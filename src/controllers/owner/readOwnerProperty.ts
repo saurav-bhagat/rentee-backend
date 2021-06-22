@@ -43,8 +43,8 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				const ownerDashoardResult: OwnerDashoardDetail = { _id, ownerId, buildings: tempbuildingArray };
 				return res.status(200).json({ ownerDashoardResult });
 			} else {
-				const { _id, name, email, phoneNumber, userType, refreshToken } = owner;
-				const ownerInfo: BasicUser = { _id, email, name, phoneNumber, userType, refreshToken };
+				const { _id, name, email, phoneNumber, userType } = owner;
+				const ownerInfo: BasicUser = { _id, email, name, phoneNumber, userType };
 				return res.status(200).json({ ownerInfo });
 			}
 		} else {

@@ -32,7 +32,7 @@ const createToken = (user: IUser, jwtSecret: string, expireTime: string): Promis
 export const verifyRefreshToken = (refreshToken: string, secret: string): Promise<IUser> => {
 	return new Promise((resolve, reject) => {
 		verify(refreshToken, secret, (err, payload) => {
-			if (err) reject(err.message);
+			if (err) reject(err);
 			resolve(<IUser>payload);
 		});
 	});

@@ -166,8 +166,8 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 				}
 			}
 			if (ownerBasicInfo) {
-				const { _id, name, email, phoneNumber, userType, refreshToken } = ownerBasicInfo;
-				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType, refreshToken };
+				const { _id, name, email, phoneNumber, userType } = ownerBasicInfo;
+				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
 				return res.status(200).json({ updatedUserInfo });
 			}
 		} catch (error) {

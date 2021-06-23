@@ -309,11 +309,13 @@ export class AuthController {
 			throw new Error('Updating field mandatory');
 		}
 	};
+
+	// TODO: check for isAuth
 	updateUserBasicInfo = (req: Request, res: Response) => {
 		const { _id, name, email, phoneNumber } = req.body;
 
 		if (!_id || !verifyObjectId([_id])) {
-			res.status(403).json({ err: 'Not Authorized' });
+			res.status(403).json({ err: 'Invalid user Details' });
 		}
 
 		if (email && !validator.isEmail(email)) {

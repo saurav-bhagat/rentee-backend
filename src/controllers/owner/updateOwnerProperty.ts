@@ -6,6 +6,7 @@ import { verifyObjectId } from '../../utils/errorUtils';
 import validator from 'validator';
 import { addBuildingsUtil, addMaintainerUtil, addRoomsUtil } from './ownerUtils';
 
+// TODO: check for isAuth
 export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, name, address } = req.body;
 
@@ -33,11 +34,12 @@ export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	}
 };
 
+// TODO: check for isAuth
 export const updateRoomDetails = async (req: Request, res: Response) => {
 	const { roomId, roomType: type, roomNo, floor, rent } = req.body;
 
 	if (!roomId || !verifyObjectId([roomId])) {
-		return res.status(403).json({ err: 'Not Authorized' });
+		return res.status(403).json({ err: 'Room Details Missing' });
 	}
 	const data: any = {};
 	if (roomNo) data['roomNo'] = roomNo;
@@ -55,6 +57,7 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 	}
 };
 
+// TODO: check for isAuth
 export const addBuildings = (req: Request, res: Response) => {
 	const { ownerId, buildings } = req.body;
 	if (!ownerId || !verifyObjectId([ownerId])) {
@@ -79,13 +82,14 @@ export const addBuildings = (req: Request, res: Response) => {
 		});
 };
 
+// TODO: check for isAuth
 export const addRooms = (req: Request, res: Response) => {
 	const { ownerId, buildingId, rooms } = req.body;
 	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
-		return res.status(403).json({ err: 'Not Authorized' });
+		return res.status(403).json({ err: 'Owner/Building details missing' });
 	}
 	if (!rooms || rooms.length == 0) {
-		return res.status(400).json({ err: 'Updating field mandatory!' });
+		return res.status(400).json({ err: 'Missing fields to update' });
 	}
 	const addRoomDetail = { ownerId, buildingId, rooms };
 	addRoomsUtil(addRoomDetail)
@@ -100,6 +104,7 @@ export const addRooms = (req: Request, res: Response) => {
 		});
 };
 
+// TODO: check for isAuth
 export const addMaintainer = (req: Request, res: Response) => {
 	const { ownerId, buildingId, email, phoneNumber, name } = req.body;
 	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {

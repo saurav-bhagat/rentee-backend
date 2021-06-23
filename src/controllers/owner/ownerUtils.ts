@@ -74,7 +74,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 	};
 
 	if (isEmptyFields(tenantDetails)) {
-		return res.status(400).json({ err: 'All fields are mandatory!' });
+		return res.status(400).json({ err: 'Missing fields' });
 	}
 
 	if (!verifyObjectId([ownerId, buildId, roomId])) {
@@ -140,6 +140,8 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 			return res.status(400).json({ err: 'Room not found!' });
 		}
 	} catch (error) {
+		// TODO: If tenant is not saved, delete the user
+		// this case can be invoked by passing security: 20,000
 		return res.status(400).json({ err: formatDbError(error) });
 	}
 };

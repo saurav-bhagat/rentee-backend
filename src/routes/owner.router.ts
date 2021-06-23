@@ -36,6 +36,7 @@ router.put('/add-rooms', addRooms);
 
 router.put('/add-maintainer', addMaintainer);
 
+// TODO: For all remove, check if required params are passed in the owner dashboard or not
 router.delete('/remove-tenant', removeTenant);
 router.delete('/remove-maintainer', removeMaintainer);
 router.delete('/remove-building', removeBuilding);

@@ -11,8 +11,9 @@ import { findBuilding } from './ownerUtils';
 // owner dashboard details
 export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 	const { ownerId } = req.body;
+	console.log(ownerId);
 	if (!ownerId || !verifyObjectId([ownerId])) {
-		return res.status(403).json({ err: 'Not authorized' });
+		return res.status(400).json({ err: 'User details missing' });
 	}
 	if (req.isAuth) {
 		const owner = await User.findOne({ _id: ownerId, userType: 'Owner' });
@@ -45,10 +46,11 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;
 				const ownerInfo: BasicUser = { _id, email, name, phoneNumber, userType };
+				// TODO:  send userID for the tenants
 				return res.status(200).json({ ownerInfo });
 			}
 		} else {
-			return res.status(400).json({ err: 'Invalid Owner Detail' });
+			return res.status(400).json({ err: 'Invalid Owner' });
 		}
 	} else {
 		return res.status(403).json({ err: 'Not Authorized' });

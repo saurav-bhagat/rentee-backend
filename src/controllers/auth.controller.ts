@@ -21,6 +21,7 @@ import { IMaintainer } from '../models/maintainer/interface';
 
 import { findMaintainer } from '../controllers/maintainer';
 import { findOwner } from '../controllers/owner';
+import { BasicUser, OwnerDashoardDetail } from './owner/ownerTypes';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -89,19 +90,19 @@ export class AuthController {
 			// verifyrefresh token method verify token and give us the payload inside it
 			const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
-			const validUser = await User.findUserForRefreshToken(userData._id, refreshToken);
-			const accessToken = await getJwtToken(userData, process.env.JWT_ACCESS_SECRET as string, '2m');
-			const newRefreshToken = await getJwtToken(userData, process.env.JWT_REFRESH_SECRET as string, '1d');
+			await User.findUserForRefreshToken(userData._id, refreshToken);
 
-			const user = await User.addRefreshToken(validUser._id, newRefreshToken);
+			const { user, accessToken, refreshToken: newRefreshToken } = await this.generateTokensForUser(userData);
+			const { _id, phoneNumber, userType, name } = user;
+			const userDetails = { _id, phoneNumber, userType, name };
 			return res.status(200).json({
-				user,
+				userDetails,
 				accessToken: accessToken,
 				refreshToken: newRefreshToken,
 			});
 		} catch (error) {
 			console.log('error is: ', error);
-			return res.status(400).json({ err: error });
+			return res.status(403).json({ err: error.message });
 		}
 	};
 
@@ -168,7 +169,7 @@ export class AuthController {
 				},
 				(err, doc) => {
 					if (err || !doc) {
-						console.log(err);
+						console.log(err, doc);
 						return res.status(400).json({ err: 'Password update failed, try again!!' });
 					}
 					return res.status(200).json({ msg: 'Password Updated Successfuly' });
@@ -187,15 +188,23 @@ export class AuthController {
 
 	// if correct userDocument arrives then no promise rejection occurs so
 	// before using thid mehtod handle userdoc null promise rejection method before call this one
-	generateTokensForUser = async (userDocument: IUser): Promise<string> => {
+	generateTokensForUser = async (userDocument: IUser): Promise<any> => {
 		const accessToken = await getJwtToken(userDocument, process.env.JWT_ACCESS_SECRET as string, '10m');
 		const refreshToken = await getJwtToken(userDocument, process.env.JWT_REFRESH_SECRET as string, '1d');
-		const user = await User.addRefreshToken(userDocument._id, refreshToken);
+		const user: BasicUser = await User.addRefreshToken(userDocument._id, refreshToken);
 		console.log('User inside genereateToken: ', user);
-		return accessToken;
+		return new Promise((resolve) => {
+			resolve({
+				accessToken,
+				refreshToken,
+				user,
+			});
+		});
 	};
 
-	findDashboardForUser = async (userDocument: IUser): Promise<ITenant | IProperty | IMaintainer | null | IUser> => {
+	findDashboardForUser = async (
+		userDocument: IUser
+	): Promise<ITenant | IProperty | IMaintainer | OwnerDashoardDetail | null | IUser | BasicUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
@@ -224,10 +233,14 @@ export class AuthController {
 		// Note: if we don't use user.ops[0]
 		// our generateTokensForUser is no longer able to genrate a token
 		// because it expect a doc structure like User.create method create
-		const accessToken = await this.generateTokensForUser(user.ops[0]);
+		const { accessToken, refreshToken, user: registeredUser } = await this.generateTokensForUser(user.ops[0]);
+		const { _id, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
+		const ownerBasicDetails = { _id, userType, ownerPhoneNumber };
 		return new Promise((resolve) => {
 			resolve({
+				ownerBasicDetails,
 				accessToken,
+				refreshToken,
 				firstLogin: true,
 			});
 		});
@@ -244,19 +257,25 @@ export class AuthController {
 		}
 
 		const userDetails = await this.findDashboardForUser(userDocument);
-		const accessToken = await this.generateTokensForUser(userDocument);
+		const { accessToken, refreshToken } = await this.generateTokensForUser(userDocument);
 		return new Promise((resolve) => {
 			resolve({
 				userDetails,
 				accessToken,
+				refreshToken,
 			});
 		});
 	};
 
 	phoneAuthenticate = (req: Request, res: Response) => {
 		const { phoneNumber, code } = req.body;
-
-		if (phoneNumber && code && phoneNumber.length === 10 && code.length === 6) {
+		if (
+			phoneNumber &&
+			phoneNumber.length === 10 &&
+			validator.isMobilePhone(`+91${phoneNumber}`, 'en-IN') &&
+			code &&
+			code.length === 6
+		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {
 					return res.status(200).json({ userDocument });
@@ -277,9 +296,13 @@ export class AuthController {
 		if (email) data['email'] = email;
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
 		if (!(Object.keys(data).length == 0)) {
-			const result = await User.findOneAndUpdate({ _id }, data, { new: true });
+			const result = await User.findOneAndUpdate({ _id }, data, {
+				new: true,
+				runValidators: true,
+				context: 'query',
+			});
 			if (!result) {
-				throw Error('Invalid user detail');
+				throw new Error('Invalid user detail');
 			}
 			return result;
 		} else {
@@ -296,16 +319,18 @@ export class AuthController {
 		if (email && !validator.isEmail(email)) {
 			res.status(400).json({ err: 'email is not valid!' });
 		}
-		if (phoneNumber && !validator.isMobilePhone(phoneNumber)) {
+		if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
 			res.status(400).json({ err: 'Phone number is not valid!' });
 		}
 		const userObject = { _id, name, email, phoneNumber };
 		this.updateUserBasicInfoUtil(userObject)
 			.then((data) => {
-				res.status(200).json({ data });
+				const { _id, name, email, phoneNumber, userType } = data;
+				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+				res.status(200).json({ updatedUserInfo });
 			})
 			.catch((err) => {
-				res.status(400).json({ err });
+				res.status(400).json({ err: err.message });
 			});
 	};
 }

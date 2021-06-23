@@ -1,19 +1,30 @@
 import { Request, Response } from 'express';
-import { IProperty } from '../../models/property/interface';
 
 import { IUser } from '../../models/user/interface';
 import Property from '../../models/property/property';
 import Maintainer from '../../models/maintainer/maintainer';
 import mongoose, { ObjectId } from 'mongoose';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../../utils/errorUtils';
-
+import {
+	BasicUser,
+	OwnerDashoardDetail,
+	IDashboardRoom,
+	IDashboardTenant,
+	IDashbhoardBuild,
+	IDashoboardMaintainer,
+} from './ownerTypes';
 import randomstring from 'randomstring';
 import User from '../../models/user/User';
-
+import validator from 'validator';
 import Tenant from '../../models/tenant/tenant';
 import Rooms from '../../models/property/rooms';
+import { IMaintainer } from '../../models/maintainer/interface';
+import { IBuilding, IRooms, IProperty } from '../../models/property/interface';
+import { ITenant } from '../../models/tenant/interface';
 
-export const findOwner = async (userDocument: IUser): Promise<IProperty | null | IUser> => {
+export const findOwner = async (
+	userDocument: IUser
+): Promise<IProperty | null | IUser | BasicUser | OwnerDashoardDetail> => {
 	const propertyDetails = await Property.findOne({ ownerId: userDocument._id })
 		.populate({
 			path: 'buildings.rooms',
@@ -33,9 +44,19 @@ export const findOwner = async (userDocument: IUser): Promise<IProperty | null |
 	if (propertyDetails == null) {
 		// throw new Error('Property details not added by owner yet');
 		// TODO: return user details even if property is not added
-		return userDocument;
+		const { _id, name, email, phoneNumber, userType } = userDocument;
+		const userInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+
+		return userInfo;
 	}
-	return propertyDetails;
+	const { _id, ownerId, buildings } = propertyDetails;
+	const tempbuildingArray: Array<IDashbhoardBuild> = [];
+	for (let i = 0; i < buildings.length; i++) {
+		const tempBuild: IDashbhoardBuild = findBuilding(buildings[i]);
+		tempbuildingArray.push(tempBuild);
+	}
+	const ownerDashbhoardResult: OwnerDashoardDetail = { _id, ownerId, buildings: tempbuildingArray };
+	return ownerDashbhoardResult;
 };
 
 // owner add tenant to tenant array
@@ -59,6 +80,9 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 	if (!verifyObjectId([ownerId, buildId, roomId])) {
 		return res.status(400).json({ err: 'Incorrect details sent' });
 	}
+	if (!validator.isEmail(email) || !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+		return res.status(400).json({ err: 'Either email/phoneNumber invalid' });
+	}
 	// Finding building with ownerId and roomId
 	// this is to ensure that ownerID is associated with buildId
 	const building = await Property.aggregate([
@@ -67,8 +91,9 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 		{ $match: { 'buildings._id': new mongoose.Types.ObjectId(buildId) } },
 	]);
 
+	// Make sure owner has building
 	if (building.length == 0) {
-		return res.status(400).json({ err: 'Invalid onwer/building' });
+		return res.status(400).json({ err: 'Invalid owner/building' });
 	}
 
 	const password = randomstring.generate({ length: 6, charset: 'abc' });
@@ -82,31 +107,32 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 	};
 
 	try {
-		// Creating a tenant User
-		const userDoc = await User.create(userInfo);
-		const userId = userDoc._id;
-
-		const joinDate = new Date();
-		const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-		// keep consistent date format
-		const rentDueDate = nextMonthDate.toString();
-
-		const tenantInfo = {
-			userId,
-			joinDate,
-			rentDueDate,
-			securityAmount,
-			roomId,
-			buildId,
-			ownerId,
-		};
-
-		const tenantDoc = await Tenant.create(tenantInfo);
-		const tenantId = tenantDoc._id;
-
+		// Make sure owner has room in building
 		const roomDocument = await Rooms.findOne({ _id: roomId });
 
 		if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
+			// Creating a tenant User
+			const userDoc = await User.create(userInfo);
+			const userId = userDoc._id;
+
+			const joinDate = new Date();
+			const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+			// keep consistent date format
+			const rentDueDate = nextMonthDate.toString();
+
+			const tenantInfo = {
+				userId,
+				joinDate,
+				rentDueDate,
+				securityAmount,
+				roomId,
+				buildId,
+				ownerId,
+			};
+
+			const tenantDoc = await Tenant.create(tenantInfo);
+			const tenantId = tenantDoc._id;
+
 			roomDocument.tenants.push(tenantId);
 			await roomDocument.save();
 			return res.status(200).json({ password, msg: 'Tenant added successfully' });
@@ -120,54 +146,58 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 
 export const addBuildingsUtil = async (addBuildigDetails: any) => {
 	const { ownerId, buildings } = addBuildigDetails;
-
-	let propertyDoc = await Property.findOneAndUpdate(
-		{ ownerId },
-		{
-			$push: { buildings: { $each: buildings } },
-		},
-		{ new: true }
-	);
-	if (!propertyDoc) {
-		const user = await User.findOne({ _id: ownerId, userType: 'Owner' });
-		if (user) {
-			const property = { ownerId, buildings };
-			propertyDoc = await Property.create(property);
-			if (propertyDoc) {
-				return propertyDoc;
+	try {
+		let propertyDoc = await Property.findOneAndUpdate(
+			{ ownerId },
+			{
+				$push: { buildings: { $each: buildings } },
+			},
+			{ new: true, runValidators: true, context: 'query' }
+		);
+		if (!propertyDoc) {
+			const user = await User.findOne({ _id: ownerId, userType: 'Owner' });
+			if (user) {
+				const property = { ownerId, buildings };
+				propertyDoc = await Property.create(property);
+				if (propertyDoc) {
+					return propertyDoc;
+				}
 			}
+			return null;
 		}
-		return null;
+		return propertyDoc;
+	} catch (err) {
+		throw formatDbError(err);
 	}
-	return propertyDoc;
 };
 
 export const addRoomsUtil = async (addRoomDetail: any) => {
 	const { ownerId, buildingId, rooms } = addRoomDetail;
-
-	const roomIds: Array<ObjectId> = [];
-	for (let i = 0; i < rooms.length; i++) {
-		const room = rooms[i];
-		const roomDocument = await Rooms.create(room);
-		if (roomDocument) {
-			roomIds.push(roomDocument._id);
+	try {
+		const roomIds: Array<ObjectId> = [];
+		for (let i = 0; i < rooms.length; i++) {
+			const room = rooms[i];
+			const roomDocument = await Rooms.create(room);
+			if (roomDocument) {
+				roomIds.push(roomDocument._id);
+			}
 		}
-	}
-	const result = await Property.findOneAndUpdate(
-		{ ownerId, 'buildings._id': buildingId },
-		{
-			$push: {
-				'buildings.$.rooms': roomIds,
+		const result = await Property.findOneAndUpdate(
+			{ ownerId, 'buildings._id': buildingId },
+			{
+				$push: {
+					'buildings.$.rooms': roomIds,
+				},
 			},
-		},
-		{
-			new: true,
+			{ new: true, runValidators: true, context: 'query' }
+		);
+		if (!result) {
+			return null;
 		}
-	);
-	if (!result) {
-		return null;
+		return result;
+	} catch (err) {
+		throw formatDbError(err);
 	}
-	return result;
 };
 
 export const addMaintainerUtil = async (addMaintainerDetails: any) => {
@@ -231,4 +261,57 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 	} catch (err) {
 		throw formatDbError(err);
 	}
+};
+
+export const findRoom = (room: IRooms) => {
+	const { _id, rent, type, floor, roomNo, tenants } = room;
+	const tenantsArray: Array<IDashboardTenant> = [];
+	if (tenants && tenants.length) {
+		for (let k = 0; k < tenants.length; k++) {
+			const tenant = tenants[k];
+			const { userId, joinDate, rentDueDate, securityAmount } = (tenant as unknown) as ITenant;
+			const tenantRef = (userId as unknown) as IUser;
+			const { _id, name, email, phoneNumber } = tenantRef;
+			const tempTenat: IDashboardTenant = {
+				_id,
+				name,
+				email,
+				phoneNumber,
+				joinDate,
+				rentDueDate,
+				securityAmount,
+			};
+			tenantsArray.push(tempTenat);
+		}
+	}
+	const roomDetails: IDashboardRoom = { _id, rent, type, floor, roomNo, tenants: tenantsArray };
+	return roomDetails;
+};
+
+export const findMaintainer = (maintainer: IMaintainer) => {
+	const { joinDate, userId } = maintainer;
+	const maintainerUser = (userId as unknown) as IUser;
+	const { _id, name, email, phoneNumber } = maintainerUser;
+	const maintainerDetail: IDashoboardMaintainer = { _id, name, email, phoneNumber, joinDate };
+	return maintainerDetail;
+};
+
+export const findBuilding = (building: IBuilding) => {
+	const { _id, name, address } = building;
+	const build = building;
+	let buildingDetail: IDashbhoardBuild;
+	const rooms: Array<IDashboardRoom> = [];
+	for (let j = 0; j < build.rooms.length; j++) {
+		const room: IDashboardRoom = findRoom((building.rooms[j] as unknown) as IRooms);
+		rooms.push(room);
+	}
+	if (building.maintainerId) {
+		const maintainerDetail: IDashoboardMaintainer = findMaintainer(
+			(building.maintainerId as unknown) as IMaintainer
+		);
+		buildingDetail = { _id, name, address, rooms, maintainer: maintainerDetail };
+		return buildingDetail;
+	}
+	buildingDetail = { _id, name, address, rooms };
+	return buildingDetail;
 };

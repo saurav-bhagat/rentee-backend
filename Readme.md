@@ -37,6 +37,8 @@
 2. git add / git commit -m "msg"
 3. git push heroku master
 
+4. heroku logs -a rentea-api
+
 ## Testing APIs
 
 * Make sure database is running and uri is set in .env

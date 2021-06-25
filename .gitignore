@@ -3,13 +3,15 @@
 #build
 /build
 
-#for rest file
-/src/request.rest
 
 # dependencies
 /node_modules
 /.pnp
 .pnp.js
+
+
+# testing-routes
+/src/apis-request
 
 # testing
 /coverage

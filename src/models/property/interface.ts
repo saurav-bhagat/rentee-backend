@@ -1,32 +1,25 @@
-import mongoose, {Schema, Document} from "mongoose";
-
-export interface ITenant extends Document {
-    _id: Schema.Types.ObjectId;
-    personId: Schema.Types.ObjectId;
-    joinDate: Date;
-    rentDueDate: Date;
-    securityAmount: Number;
-}
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRooms extends Document {
-    _id: Schema.Types.ObjectId;
-    rent: Number;
-    type: String;
-    floor: String;
-    roomNo: Number;
-    isEmpty: Boolean;
-    tenants: mongoose.Types.Array<ITenant>;
+	_id: Schema.Types.ObjectId;
+	rent: number;
+	type: string;
+	floor: string;
+	roomNo: number;
+	isEmpty: boolean;
+	tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 
 export interface IBuilding extends Document {
-    _id: Schema.Types.ObjectId;
-    name: String;
-    address: String;
-    rooms: mongoose.Types.Array<IRooms>;
+	_id: Schema.Types.ObjectId;
+	name: string;
+	address: string;
+	rooms: mongoose.Types.Array<Schema.Types.ObjectId>;
+	maintainerId: Schema.Types.ObjectId;
 }
 
 export interface IProperty extends Document {
-    _id: Schema.Types.ObjectId;
-    ownerId: Schema.Types.ObjectId;
-    buildings: mongoose.Types.Array<IBuilding>;
+	_id: Schema.Types.ObjectId;
+	ownerId: Schema.Types.ObjectId;
+	buildings: mongoose.Types.Array<IBuilding>;
 }

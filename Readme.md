@@ -36,3 +36,9 @@
 1. heroku login
 2. git add / git commit -m "msg"
 3. git push heroku master
+
+## Testing APIs
+
+* Make sure database is running and uri is set in .env
+* To test OPT while login/signup - Uncomment lines: 7, 185, 238
+* 

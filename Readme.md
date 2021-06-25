@@ -27,3 +27,11 @@
 8. open PR from dev to master. 
 9. once PR is merged into master, do:
     git pull origin master (in your local to keep sync with master)
+
+
+
+## Testing APIs
+
+* Make sure database is running and uri is set in .env
+* To test OPT while login/signup - Uncomment lines: 7, 185, 238
+* 

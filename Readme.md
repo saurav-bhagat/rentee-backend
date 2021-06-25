@@ -27,3 +27,12 @@
 8. open PR from dev to master. 
 9. once PR is merged into master, do:
     git pull origin master (in your local to keep sync with master)
+
+
+## To deploy
+
+`https://rentea-api.herokuapp.com/ | https://git.heroku.com/rentea-api.git`
+
+1. heroku login
+2. git add / git commit -m "msg"
+3. git push heroku master

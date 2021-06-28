@@ -1,15 +1,15 @@
-const https = require('https');
+import https from 'https';
 /*
  * import checksum generation utility
  * You can get this utility from https://developer.paytm.com/docs/checksum/
  */
-const PaytmChecksumLib = require('./PaytmChecksum');
+import PaytmChecksum from './PaytmChecksum';
 
-export const getPaymentToken = (req, res) => {
+export const getPaymentToken = (req: any, res: any) => {
 	console.log('in  getPaytm get token ');
-	const { name, email, amount } = req.body;
+	// const { name, email, amount } = req.body;
 
-	var paytmParams = {};
+	const paytmParams = {} as any;
 
 	const orderId = 'TEST_' + new Date().getTime();
 	const customerId = 'Ram_' + new Date().getTime();
@@ -33,16 +33,16 @@ export const getPaymentToken = (req, res) => {
 	 * Generate checksum by parameters we have in body
 	 * Find your Merchant Key in your Paytm Dashboard at https://dashboard.paytm.com/next/apikeys
 	 */
-	PaytmChecksumLib.generateSignature(JSON.stringify(paytmParams.body), process.env.MERCHANT_KEY).then(function (
+	PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), process.env.MERCHANT_KEY).then(function (
 		checksum
 	) {
 		paytmParams.head = {
 			signature: checksum,
 		};
 
-		var post_data = JSON.stringify(paytmParams);
+		const post_data = JSON.stringify(paytmParams);
 
-		var options = {
+		const options = {
 			/* for Staging */
 			hostname: 'securegw-stage.paytm.in' /* for Production */, // hostname: 'securegw.paytm.in',
 
@@ -55,15 +55,15 @@ export const getPaymentToken = (req, res) => {
 			},
 		};
 
-		var response = '';
-		var post_req = https.request(options, function (post_res) {
+		let response = '';
+		const post_req = https.request(options, function (post_res) {
 			post_res.on('data', function (chunk) {
 				response += chunk;
 			});
 
 			post_res.on('end', function () {
-				response = JSON.parse(response);
-				console.log('Response: ', response.body.txnToken);
+				const responseObj = JSON.parse(response);
+				console.log('Response: ', responseObj.body.txnToken);
 
 				res.json({ response, orderId, customerId, callBackUrl: 'https://localhost:3000/p/callback' });
 			});
@@ -74,6 +74,6 @@ export const getPaymentToken = (req, res) => {
 	});
 };
 
-export const callBackUrl = (req, res) => {
+export const callBackUrl = (req: any, res: any) => {
 	console.log('in callBack response');
 };

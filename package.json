@@ -2,13 +2,18 @@
   "name": "rentee-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "src/app.js",
+  "main": "build/app.js",
   "scripts": {
     "dev": "nodemon",
+	"postinstall": "tsc",
+	"watch-node": "nodemon build/app.js",
     "start": "yarn build && node build/app.js",
     "build": "rimraf ./build && prettier --check src/ && tsc",
     "prettier:fix": "prettier --write src/",
     "lint": "eslint --ext .ts src/"
+  },
+  "engines": {
+    "node": "12.x"
   },
   "pre-commit": [
     "build",

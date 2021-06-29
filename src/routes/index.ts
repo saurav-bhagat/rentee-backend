@@ -13,4 +13,11 @@ router.use('/tenant', isAuth, tenantRouter);
 router.use('/auth', authRouter);
 router.use('/payment', paytmRouter);
 
+router.use('/health', (req, res) => {
+	res.status(200).json({
+		status: 'ok',
+		env: process.env.ENV,
+	});
+});
+
 export default router;

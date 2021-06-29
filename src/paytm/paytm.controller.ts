@@ -65,7 +65,12 @@ export const getPaymentToken = (req: any, res: any) => {
 				const responseObj = JSON.parse(response);
 				console.log('Response: ', responseObj.body.txnToken);
 
-				res.json({ response, orderId, customerId, callBackUrl: 'https://localhost:3000/p/callback' });
+				res.status(200).json({
+					response: responseObj,
+					orderId,
+					customerId,
+					callBackUrl: 'https://localhost:3000/p/callback',
+				});
 			});
 		});
 

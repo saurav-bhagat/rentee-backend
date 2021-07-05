@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { payWithPaytm, paytmCallBackUrl } from '../paytm/paytm.controller';
+import { initiatePayment, paymentResponse } from '../payment/paytm.controller';
 const router: Router = Router();
 
-router.post('/paynow', payWithPaytm);
-router.post('/callBack', paytmCallBackUrl);
+router.post('/initiate-payment', initiatePayment);
+router.post('/payment-response', paymentResponse);
 router.post('/test', (req, res) => {
 	console.log('in test');
 	res.json({ msg: 'response form backend' });

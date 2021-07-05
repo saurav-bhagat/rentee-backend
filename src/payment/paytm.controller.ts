@@ -1,27 +1,28 @@
 import https from 'https';
 import { Request, Response } from 'express';
 import PaytmChecksum from './PaytmChecksum';
+import { v4 as uuid4 } from 'uuid';
 
-export const payWithPaytm = (req: Request, res: Response) => {
-	console.log(req.body);
+export const initiatePayment = (req: Request, res: Response) => {
 	const { amount, name } = req.body;
 	const data = { name, amount };
-	const orderId = 'TEST_' + new Date().getTime();
+
+	const orderId = uuid4();
+	const customerId = uuid4();
 
 	const paytmParams: any = {};
-
 	paytmParams.body = {
 		requestType: 'Payment',
 		mid: process.env.MERCHANT_ID,
 		websiteName: process.env.WEBSITE_NAME,
 		orderId: orderId,
-		callbackUrl: 'https://403b652d20f4.ngrok.io/payment/callback',
+		callbackUrl: `${process.env.HOST_NAME}/payment/payment-response`,
 		txnAmount: {
 			value: data.amount,
 			currency: 'INR',
 		},
 		userInfo: {
-			custId: data.name,
+			custId: customerId,
 		},
 	};
 
@@ -36,10 +37,10 @@ export const payWithPaytm = (req: Request, res: Response) => {
 
 		const options = {
 			/* for Staging */
-			hostname: 'securegw-stage.paytm.in',
+			hostname: process.env.PAYTM_STAGING_HOST_NAME,
 
 			/* for Production */
-			// hostname: 'securegw.paytm.in',
+			// hostname: 'process.env.PAYTM_PRODUCTION_HOST_NAME',
 
 			port: 443,
 			path: `/theia/api/v1/initiateTransaction?mid=${process.env.MERCHANT_ID}&orderId=${orderId}`,
@@ -50,28 +51,22 @@ export const payWithPaytm = (req: Request, res: Response) => {
 			},
 		};
 
-		let response: string;
+		let response = '';
 
 		const post_req = https.request(options, function (post_res) {
-			console.log('i should call first before ');
 			post_res.on('data', function (chunk) {
 				response += chunk;
 			});
-
 			post_res.on('end', function () {
 				const parseResponse = JSON.parse(response);
-
-				console.log('txnToken:', parseResponse);
-
 				const txn = parseResponse.body.txnToken;
-
 				const result = {
-					url: `https://securegw-stage.paytm.in/theia/api/v1/showPaymentPage?mid=${process.env.MERCHANT_ID}&orderId=${orderId}`,
+					url: `${process.env.PAYTM_SHOW_PAYMENT_PAGE}&orderId=${orderId}`,
 					mid: `${process.env.MERCHANT_ID}`,
 					orderId,
 					txn,
 				};
-				res.render('Request', { result });
+				res.render('InitiateTransaction', { result });
 			});
 		});
 		post_req.write(post_data);
@@ -82,17 +77,11 @@ export const payWithPaytm = (req: Request, res: Response) => {
 	});
 };
 
-export const paytmCallBackUrl = (req: any, res: any) => {
-	console.log('in call back');
+export const paymentResponse = (req: any, res: any) => {
 	const data = req.body;
-	console.log(data);
-
 	const paytmChecksum = data.CHECKSUMHASH;
-
 	const isVerifySignature = PaytmChecksum.verifySignature(data, process.env.MERCHANT_KEY, paytmChecksum);
 	if (isVerifySignature) {
-		console.log('Checksum Matched');
-
 		const paytmParams: any = {};
 
 		paytmParams.body = {
@@ -111,10 +100,10 @@ export const paytmCallBackUrl = (req: any, res: any) => {
 
 			const options = {
 				/* for Staging */
-				hostname: 'securegw-stage.paytm.in',
+				hostname: process.env.PAYTM_STAGING_HOST_NAME,
 
 				/* for Production */
-				// hostname: 'securegw.paytm.in',
+				// hostname: 'process.env.PAYTM_PRODUCTION_HOST_NAME',
 
 				port: 443,
 				path: '/v3/order/status',
@@ -133,8 +122,7 @@ export const paytmCallBackUrl = (req: any, res: any) => {
 				});
 
 				post_res.on('end', function () {
-					console.log('Response in : ', response);
-					res.render('Response', { code: data.RESPCODE });
+					res.render('PaymentResponse', { code: data.RESPCODE });
 					res.end();
 				});
 			});

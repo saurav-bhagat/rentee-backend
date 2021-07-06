@@ -5,19 +5,19 @@
   "main": "build/app.js",
   "scripts": {
     "dev": "nodemon",
-	"postinstall": "tsc",
-	"watch-node": "nodemon build/app.js",
+    "postinstall": "tsc",
+    "watch-node": "nodemon build/app.js",
     "start": "yarn build && node build/app.js",
     "build": "rimraf ./build && prettier --check src/ && tsc",
     "prettier:fix": "prettier --write src/",
     "lint": "eslint --ext .ts src/"
   },
   "engines": {
-    "node": "12.x"
+    "node": "14.x"
   },
   "pre-commit": [
     "build",
-	"lint"
+    "lint"
   ],
   "keywords": [],
   "author": "",
@@ -48,8 +48,11 @@
     "typescript": "^4.2.4"
   },
   "dependencies": {
+    "@types/uuid": "^8.3.1",
+    "axios": "^0.21.1",
     "bcrypt": "^5.0.1",
     "dotenv": "^8.2.0",
+    "ejs": "^3.1.6",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
     "lodash": "^4.17.21",
@@ -58,6 +61,7 @@
     "nodemailer": "^6.6.0",
     "randomstring": "^1.1.5",
     "twilio": "^3.61.0",
+    "uuid": "^8.3.2",
     "validator": "^13.6.0"
   }
 }

@@ -25,56 +25,19 @@ export const initiatePayment = (req: Request, res: Response) => {
 			custId: customerId,
 		},
 	};
-
-	PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), process.env.MERCHANT_KEY).then(function (
-		checksum
-	) {
-		paytmParams.head = {
-			signature: checksum,
-		};
-
-		const post_data = JSON.stringify(paytmParams);
-
-		const options = {
-			/* for Staging */
-			hostname: process.env.PAYTM_STAGING_HOST_NAME,
-
-			/* for Production */
-			// hostname: 'process.env.PAYTM_PRODUCTION_HOST_NAME',
-
-			port: 443,
-			path: `/theia/api/v1/initiateTransaction?mid=${process.env.MERCHANT_ID}&orderId=${orderId}`,
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				'Content-Length': post_data.length,
-			},
-		};
-
-		let response = '';
-
-		const post_req = https.request(options, function (post_res) {
-			post_res.on('data', function (chunk) {
-				response += chunk;
-			});
-			post_res.on('end', function () {
-				const parseResponse = JSON.parse(response);
-				const txn = parseResponse.body.txnToken;
-				const result = {
-					url: `${process.env.PAYTM_SHOW_PAYMENT_PAGE}&orderId=${orderId}`,
-					mid: `${process.env.MERCHANT_ID}`,
-					orderId,
-					txn,
-				};
-				res.render('InitiateTransaction', { result });
-			});
-		});
-		post_req.write(post_data);
-		post_req.on('error', (err) => {
-			console.log('post req in gen call err', err);
-		});
-		post_req.end();
-	});
+	const options = {
+		/* for Staging */
+		hostname: process.env.PAYTM_HOST_NAME,
+		/* for Production */
+		// hostname: 'process.env.PAYTM_HOST_NAME',
+		port: 443,
+		path: `/theia/api/v1/initiateTransaction?mid=${process.env.MERCHANT_ID}&orderId=${orderId}`,
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+	};
+	paytmGenerateSignatueUtil(req, res, paytmParams, options, true, {}, orderId);
 };
 
 export const paymentResponse = (req: any, res: any) => {
@@ -88,51 +51,73 @@ export const paymentResponse = (req: any, res: any) => {
 			mid: process.env.MERCHANT_ID,
 			orderId: data.ORDERID,
 		};
+		const options = {
+			/* for Staging */
+			hostname: process.env.PAYTM_HOST_NAME,
 
-		PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), process.env.MERCHANT_KEY).then(function (
-			checksum
-		) {
-			paytmParams.head = {
-				signature: checksum,
-			};
+			/* for Production */
+			// hostname: 'process.env.PAYTM_HOST_NAME',
 
-			const post_data = JSON.stringify(paytmParams);
+			port: 443,
+			path: '/v3/order/status',
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+		};
+		paytmGenerateSignatueUtil(req, res, paytmParams, options, false, data, {});
+	} else {
+		res.status(400).json('Checksum Mismatched');
+	}
+};
 
-			const options = {
-				/* for Staging */
-				hostname: process.env.PAYTM_STAGING_HOST_NAME,
+export const paytmGenerateSignatueUtil = (
+	req: Request,
+	res: Response,
+	paytmParams: any,
+	options: any,
+	flag: boolean,
+	data: any,
+	orderId: any
+) => {
+	PaytmChecksum.generateSignature(JSON.stringify(paytmParams.body), process.env.MERCHANT_KEY).then(function (
+		checksum
+	) {
+		paytmParams.head = {
+			signature: checksum,
+		};
 
-				/* for Production */
-				// hostname: 'process.env.PAYTM_PRODUCTION_HOST_NAME',
-
-				port: 443,
-				path: '/v3/order/status',
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'Content-Length': post_data.length,
-				},
-			};
-
-			// Set up the request
-			let response = '';
-			const post_req = https.request(options, function (post_res) {
-				post_res.on('data', function (chunk) {
-					response += chunk;
+		const post_data = JSON.stringify(paytmParams);
+		options.headers['Content-Length'] = post_data.length;
+		// Set up the request
+		let response = '';
+		const post_req = https.request(options, function (post_res) {
+			post_res.on('data', function (chunk) {
+				response += chunk;
+			});
+			if (flag) {
+				post_res.on('end', function () {
+					const parseResponse = JSON.parse(response);
+					const txn = parseResponse.body.txnToken;
+					const result = {
+						url: `${process.env.PAYTM_SHOW_PAYMENT_PAGE}&orderId=${orderId}`,
+						mid: `${process.env.MERCHANT_ID}`,
+						orderId,
+						txn,
+					};
+					res.render('InitiateTransaction', { result });
 				});
-
+			} else {
 				post_res.on('end', function () {
 					res.render('PaymentResponse', { code: data.RESPCODE });
 					res.end();
 				});
-			});
-			post_req.write(post_data);
-			post_req.on('error', (err) => {
-				console.log('post req in err in callback ', err);
-			});
-			post_req.end();
+			}
 		});
-	} else {
-		res.status(400).json('Checksum Mismatched');
-	}
+		post_req.write(post_data);
+		post_req.on('error', (err) => {
+			console.log('post req in err in callback ', err);
+		});
+		post_req.end();
+	});
 };

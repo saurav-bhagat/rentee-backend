@@ -182,6 +182,7 @@ export class AuthController {
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
 		// console.log('receiving phone number for opt', req, res);
+		res.json({ msg: 'req receive successfully' });
 		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};

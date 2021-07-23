@@ -311,29 +311,32 @@ export class AuthController {
 		}
 	};
 
-	// TODO: check for isAuth
 	updateUserBasicInfo = (req: Request, res: Response) => {
-		const { _id, name, email, phoneNumber } = req.body;
+		if (req.isAuth) {
+			const { _id, name, email, phoneNumber } = req.body;
 
-		if (!_id || !verifyObjectId([_id])) {
-			res.status(403).json({ err: 'Invalid user Details' });
-		}
+			if (!_id || !verifyObjectId([_id])) {
+				res.status(403).json({ err: 'Invalid user Details' });
+			}
 
-		if (email && !validator.isEmail(email)) {
-			res.status(400).json({ err: 'email is not valid!' });
+			if (email && !validator.isEmail(email)) {
+				res.status(400).json({ err: 'email is not valid!' });
+			}
+			if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+				res.status(400).json({ err: 'Phone number is not valid!' });
+			}
+			const userObject = { _id, name, email, phoneNumber };
+			this.updateUserBasicInfoUtil(userObject)
+				.then((data) => {
+					const { _id, name, email, phoneNumber, userType } = data;
+					const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+					res.status(200).json({ updatedUserInfo });
+				})
+				.catch((err) => {
+					res.status(400).json({ err: err.message });
+				});
+		} else {
+			return res.status(403).json({ err: 'Not Authorized' });
 		}
-		if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-			res.status(400).json({ err: 'Phone number is not valid!' });
-		}
-		const userObject = { _id, name, email, phoneNumber };
-		this.updateUserBasicInfoUtil(userObject)
-			.then((data) => {
-				const { _id, name, email, phoneNumber, userType } = data;
-				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
-				res.status(200).json({ updatedUserInfo });
-			})
-			.catch((err) => {
-				res.status(400).json({ err: err.message });
-			});
 	};
 }

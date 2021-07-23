@@ -13,29 +13,31 @@ export const pong = (req: Request, res: Response) => {
 };
 
 // owner should be able to delete tenant
-// TODO: check for isAuth
 export const removeTenant = async (req: Request, res: Response) => {
-	const { tenantId } = req.body;
-	if (!tenantId || !verifyObjectId([tenantId])) {
-		return res.status(403).json({ err: 'MIssing tenant details' });
-	}
-	// step-1 remove tenant from user model
-	const userdoc = await User.findById({ _id: tenantId });
-	if (userdoc) {
-		// step-2 remove tenant reference using pre remove hook in user model
-		// If u wondering about remove method see user model pre remove  hook
-		await userdoc.remove();
-		return res.status(200).json({ msg: 'Tenant removed successfully!' });
+	if (req.isAuth) {
+		const { tenantId } = req.body;
+		if (!tenantId || !verifyObjectId([tenantId])) {
+			return res.status(403).json({ err: 'MIssing tenant details' });
+		}
+		// step-1 remove tenant from user model
+		const userdoc = await User.findById({ _id: tenantId });
+		if (userdoc) {
+			// step-2 remove tenant reference using pre remove hook in user model
+			// If u wondering about remove method see user model pre remove  hook
+			await userdoc.remove();
+			return res.status(200).json({ msg: 'Tenant removed successfully!' });
+		} else {
+			return res.status(400).json({ err: 'Invalid tenant detail ' });
+		}
 	} else {
-		return res.status(400).json({ err: 'Invalid tenant detail ' });
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };
 
 // owner should be able to remove  maintainer from specific building
-// TODO: check for isAuth
 export const removeMaintainer = async (req: Request, res: Response) => {
 	const { maintainerId, buildingId, ownerId } = req.body;
-	if (!maintainerId || !buildingId || !ownerId) {
+	if (!req.isAuth || !maintainerId || !buildingId || !ownerId) {
 		return res.status(400).json({ err: 'Not authorized' });
 	}
 	// step-1 Find  maintainer user
@@ -66,10 +68,10 @@ export const removeMaintainer = async (req: Request, res: Response) => {
 };
 
 // owner should be able to remove  building
-// TODO: check for isAuth
+
 export const removeBuilding = async (req: Request, res: Response) => {
 	const { buildingId, ownerId } = req.body;
-	if (!buildingId || !ownerId || !verifyObjectId([buildingId])) {
+	if (!req.isAuth || !buildingId || !ownerId || !verifyObjectId([buildingId])) {
 		return res.status(400).json({ err: 'Not authorized' });
 	}
 	const tenants = await Tenant.find({ buildId: buildingId });
@@ -105,10 +107,9 @@ export const removeBuilding = async (req: Request, res: Response) => {
 };
 
 // owner should be able to remove room
-// TODO: check for isAuth
 export const removeRoom = async (req: Request, res: Response) => {
 	const { ownerId, roomId, buildingId } = req.body;
-	if (!roomId || !ownerId || !buildingId || !verifyObjectId([roomId, ownerId, buildingId])) {
+	if (!req.isAuth || !roomId || !ownerId || !buildingId || !verifyObjectId([roomId, ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not authorized' });
 	}
 	const roomDetails = await Rooms.findOne({ _id: roomId });

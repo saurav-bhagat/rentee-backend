@@ -6,11 +6,10 @@ import { verifyObjectId } from '../../utils/errorUtils';
 import validator from 'validator';
 import { addBuildingsUtil, addMaintainerUtil, addRoomsUtil } from './ownerUtils';
 
-// TODO: check for isAuth
 export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, name, address } = req.body;
 
-	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
+	if (!req.isAuth || !ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 	const data: any = {};
@@ -34,33 +33,36 @@ export const updateOnwerBuilding = async (req: Request, res: Response) => {
 	}
 };
 
-// TODO: check for isAuth
 export const updateRoomDetails = async (req: Request, res: Response) => {
-	const { roomId, roomType: type, roomNo, floor, rent } = req.body;
+	if (req.isAuth) {
+		const { roomId, roomType: type, roomNo, floor, rent } = req.body;
 
-	if (!roomId || !verifyObjectId([roomId])) {
-		return res.status(403).json({ err: 'Room Details Missing' });
+		if (!roomId || !verifyObjectId([roomId])) {
+			return res.status(403).json({ err: 'Room Details Missing' });
+		}
+		const data: any = {};
+		if (roomNo) data['roomNo'] = roomNo;
+		if (type) data['type'] = type;
+
+		if (floor) data['floor'] = floor;
+		if (rent) data['rent'] = rent;
+
+		if (!(Object.keys(data).length === 0)) {
+			const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
+			if (!result) return res.status(400).json({ err: 'Invalid room detail' });
+			return res.status(200).json({ result, msg: 'Room detail updated successfully!' });
+		} else {
+			return res.status(400).json({ err: 'Updating field mandatory!' });
+		}
 	}
-	const data: any = {};
-	if (roomNo) data['roomNo'] = roomNo;
-	if (type) data['type'] = type;
-
-	if (floor) data['floor'] = floor;
-	if (rent) data['rent'] = rent;
-
-	if (!(Object.keys(data).length === 0)) {
-		const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
-		if (!result) return res.status(400).json({ err: 'Invalid room detail' });
-		return res.status(200).json({ result, msg: 'Room detail updated successfully!' });
-	} else {
-		return res.status(400).json({ err: 'Updating field mandatory!' });
+	{
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };
 
-// TODO: check for isAuth
 export const addBuildings = (req: Request, res: Response) => {
 	const { ownerId, buildings } = req.body;
-	if (!ownerId || !verifyObjectId([ownerId])) {
+	if (!req.isAuth || !ownerId || !verifyObjectId([ownerId])) {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 
@@ -82,32 +84,35 @@ export const addBuildings = (req: Request, res: Response) => {
 		});
 };
 
-// TODO: check for isAuth
 export const addRooms = (req: Request, res: Response) => {
-	const { ownerId, buildingId, rooms } = req.body;
-	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
-		return res.status(403).json({ err: 'Owner/Building details missing' });
+	if (req.isAuth) {
+		const { ownerId, buildingId, rooms } = req.body;
+		if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
+			return res.status(403).json({ err: 'Owner/Building details missing' });
+		}
+		if (!rooms || rooms.length == 0) {
+			return res.status(400).json({ err: 'Missing fields to update' });
+		}
+		const addRoomDetail = { ownerId, buildingId, rooms };
+		addRoomsUtil(addRoomDetail)
+			.then((data) => {
+				if (data) {
+					return res.status(200).json({ msg: 'Room added succesfully!' });
+				}
+				return res.status(400).json({ err: 'Invalid owner/building detail' });
+			})
+			.catch((err) => {
+				return res.status(400).json({ err });
+			});
 	}
-	if (!rooms || rooms.length == 0) {
-		return res.status(400).json({ err: 'Missing fields to update' });
+	{
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
-	const addRoomDetail = { ownerId, buildingId, rooms };
-	addRoomsUtil(addRoomDetail)
-		.then((data) => {
-			if (data) {
-				return res.status(200).json({ msg: 'Room added succesfully!' });
-			}
-			return res.status(400).json({ err: 'Invalid owner/building detail' });
-		})
-		.catch((err) => {
-			return res.status(400).json({ err });
-		});
 };
 
-// TODO: check for isAuth
 export const addMaintainer = (req: Request, res: Response) => {
 	const { ownerId, buildingId, email, phoneNumber, name } = req.body;
-	if (!ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
+	if (!req.isAuth || !ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {
 		res.status(403).json({ err: 'Not authorized' });
 	}
 

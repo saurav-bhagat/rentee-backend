@@ -248,7 +248,6 @@ export class AuthController {
 	};
 
 	findUser = async (phoneNumber: string, code: string) => {
-		console.log(code);
 		// for production it comment
 		// await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
@@ -264,6 +263,7 @@ export class AuthController {
 				userDetails,
 				accessToken,
 				refreshToken,
+				firstLogin: false,
 			});
 		});
 	};

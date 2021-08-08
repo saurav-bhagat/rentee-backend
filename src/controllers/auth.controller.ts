@@ -21,7 +21,7 @@ import { IMaintainer } from '../models/maintainer/interface';
 
 import { findMaintainer } from '../controllers/maintainer';
 import { findOwner } from '../controllers/owner';
-import { BasicUser, OwnerDashoardDetail } from './owner/ownerTypes';
+import { BasicUser, OwnerDashboardDetail } from './owner/ownerTypes';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -205,7 +205,7 @@ export class AuthController {
 
 	findDashboardForUser = async (
 		userDocument: IUser
-	): Promise<ITenant | IProperty | IMaintainer | OwnerDashoardDetail | null | IUser | BasicUser> => {
+	): Promise<ITenant | IProperty | IMaintainer | OwnerDashboardDetail | null | IUser | BasicUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;

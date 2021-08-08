@@ -6,7 +6,7 @@ import { verifyObjectId } from '../../utils/errorUtils';
 import validator from 'validator';
 import { addBuildingsUtil, addMaintainerUtil, addRoomsUtil } from './ownerUtils';
 
-export const updateOnwerBuilding = async (req: Request, res: Response) => {
+export const updateOwnerBuilding = async (req: Request, res: Response) => {
 	const { ownerId, buildingId, name, address } = req.body;
 
 	if (!req.isAuth || !ownerId || !buildingId || !verifyObjectId([ownerId, buildingId])) {

@@ -4,7 +4,7 @@ import Property from '../../models/property/property';
 import User from '../../models/user/User';
 import { verifyObjectId } from '../../utils/errorUtils';
 
-import { BasicUser, OwnerDashoardDetail, IDashbhoardBuild } from './ownerTypes';
+import { BasicUser, OwnerDashboardDetail, IDashboardBuild } from './ownerTypes';
 
 import { findBuilding } from './ownerUtils';
 
@@ -36,13 +36,13 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				});
 			if (ownerDetails) {
 				const { _id, ownerId, buildings } = ownerDetails;
-				const tempbuildingArray: Array<IDashbhoardBuild> = [];
+				const tempbuildingArray: Array<IDashboardBuild> = [];
 				for (let i = 0; i < buildings.length; i++) {
-					const tempBuild: IDashbhoardBuild = findBuilding(buildings[i]);
+					const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 					tempbuildingArray.push(tempBuild);
 				}
-				const ownerDashoardResult: OwnerDashoardDetail = { _id, ownerId, buildings: tempbuildingArray };
-				return res.status(200).json({ ownerDashoardResult });
+				const ownerDashboardResult: OwnerDashboardDetail = { _id, ownerId, buildings: tempbuildingArray };
+				return res.status(200).json({ ownerDashboardResult });
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;
 				const ownerInfo: BasicUser = { _id, email, name, phoneNumber, userType };

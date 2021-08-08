@@ -48,3 +48,28 @@ export interface IDashboardMaintainer {
 	phoneNumber?: string;
 	joinDate?: string;
 }
+
+export interface IBuildingObjectOwnerProperty {
+	ownerId: ObjectId;
+	buildings?: Array<IBuildingOwnerProperty>;
+}
+
+export interface IBuildingOwnerProperty {
+	name?: string;
+	address?: string;
+	rooms?: Array<IRoomOwnerProperty>;
+	maintainerDetail?: IMaintainerOwnerProperty;
+}
+
+export interface IRoomOwnerProperty {
+	rent?: number;
+	type?: string;
+	floor?: string;
+	roomNo?: number;
+}
+
+export interface IMaintainerOwnerProperty {
+	email?: string;
+	name?: string;
+	phoneNumber?: string;
+}

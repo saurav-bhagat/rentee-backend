@@ -61,88 +61,92 @@ export const findOwner = async (
 
 // owner add tenant to tenant array
 export const tenantRegistration = async (req: Request, res: Response): Promise<Response<void>> => {
-	const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId } = req.body;
+	if (req.isAuth) {
+		const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId } = req.body;
 
-	const tenantDetails = {
-		name,
-		email,
-		phoneNumber,
-		securityAmount,
-		ownerId,
-		buildId,
-		roomId,
-	};
+		const tenantDetails = {
+			name,
+			email,
+			phoneNumber,
+			securityAmount,
+			ownerId,
+			buildId,
+			roomId,
+		};
 
-	if (isEmptyFields(tenantDetails)) {
-		return res.status(400).json({ err: 'Missing fields' });
-	}
-
-	if (!verifyObjectId([ownerId, buildId, roomId])) {
-		return res.status(400).json({ err: 'Incorrect details sent' });
-	}
-	if (!validator.isEmail(email) || !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-		return res.status(400).json({ err: 'Either email/phoneNumber invalid' });
-	}
-	// Finding building with ownerId and roomId
-	// this is to ensure that ownerID is associated with buildId
-	const building = await Property.aggregate([
-		{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
-		{ $unwind: '$buildings' },
-		{ $match: { 'buildings._id': new mongoose.Types.ObjectId(buildId) } },
-	]);
-
-	// Make sure owner has building
-	if (building.length == 0) {
-		return res.status(400).json({ err: 'Invalid owner/building' });
-	}
-
-	const password = randomstring.generate({ length: 6, charset: 'abc' });
-
-	const userInfo = {
-		name,
-		email,
-		password,
-		phoneNumber,
-		userType: 'Tenant',
-	};
-
-	try {
-		// Make sure owner has room in building
-		const roomDocument = await Rooms.findOne({ _id: roomId });
-
-		if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
-			// Creating a tenant User
-			const userDoc = await User.create(userInfo);
-			const userId = userDoc._id;
-
-			const joinDate = new Date();
-			const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-			// keep consistent date format
-			const rentDueDate = nextMonthDate.toString();
-
-			const tenantInfo = {
-				userId,
-				joinDate,
-				rentDueDate,
-				securityAmount,
-				roomId,
-				buildId,
-				ownerId,
-			};
-
-			const tenantDoc = await Tenant.create(tenantInfo);
-			const tenantId = tenantDoc._id;
-
-			roomDocument.tenants.push(tenantId);
-			await roomDocument.save();
-			return res.status(200).json({ password, msg: 'Tenant added successfully' });
-		} else {
-			return res.status(400).json({ err: 'Room not found!' });
+		if (isEmptyFields(tenantDetails)) {
+			return res.status(400).json({ err: 'Missing fields' });
 		}
-	} catch (error) {
-		// TODO: If tenant is not saved, delete the user
-		// this case can be invoked by passing security: 20,000
-		return res.status(400).json({ err: formatDbError(error) });
+
+		if (!verifyObjectId([ownerId, buildId, roomId])) {
+			return res.status(400).json({ err: 'Incorrect details sent' });
+		}
+		if (!validator.isEmail(email) || !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+			return res.status(400).json({ err: 'Either email/phoneNumber invalid' });
+		}
+		// Finding building with ownerId and roomId
+		// this is to ensure that ownerID is associated with buildId
+		const building = await Property.aggregate([
+			{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
+			{ $unwind: '$buildings' },
+			{ $match: { 'buildings._id': new mongoose.Types.ObjectId(buildId) } },
+		]);
+
+		// Make sure owner has building
+		if (building.length == 0) {
+			return res.status(400).json({ err: 'Invalid owner/building' });
+		}
+
+		const password = randomstring.generate({ length: 6, charset: 'abc' });
+
+		const userInfo = {
+			name,
+			email,
+			password,
+			phoneNumber,
+			userType: 'Tenant',
+		};
+
+		try {
+			// Make sure owner has room in building
+			const roomDocument = await Rooms.findOne({ _id: roomId });
+
+			if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
+				// Creating a tenant User
+				const userDoc = await User.create(userInfo);
+				const userId = userDoc._id;
+
+				const joinDate = new Date();
+				const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+				// keep consistent date format
+				const rentDueDate = nextMonthDate.toString();
+
+				const tenantInfo = {
+					userId,
+					joinDate,
+					rentDueDate,
+					securityAmount,
+					roomId,
+					buildId,
+					ownerId,
+				};
+
+				const tenantDoc = await Tenant.create(tenantInfo);
+				const tenantId = tenantDoc._id;
+
+				roomDocument.tenants.push(tenantId);
+				await roomDocument.save();
+				return res.status(200).json({ password, msg: 'Tenant added successfully' });
+			} else {
+				return res.status(400).json({ err: 'Room not found!' });
+			}
+		} catch (error) {
+			// TODO: If tenant is not saved, delete the user
+			// this case can be invoked by passing security: 20,000
+			return res.status(400).json({ err: formatDbError(error) });
+		}
+	} else {
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };
 

@@ -8,17 +8,17 @@ export interface BasicUser {
 	userType?: string;
 }
 
-export interface OwnerDashoardDetail {
+export interface OwnerDashboardDetail {
 	_id: ObjectId;
 	ownerId: ObjectId;
-	buildings?: Array<IDashbhoardBuild>;
+	buildings?: Array<IDashboardBuild>;
 }
 
-export interface IDashbhoardBuild {
+export interface IDashboardBuild {
 	_id: ObjectId;
 	name: string;
 	address: string;
-	maintainer?: IDashoboardMaintainer;
+	maintainer?: IDashboardMaintainer;
 	rooms?: Array<IDashboardRoom>;
 }
 
@@ -41,7 +41,7 @@ export interface IDashboardTenant {
 	securityAmount: number;
 }
 
-export interface IDashoboardMaintainer {
+export interface IDashboardMaintainer {
 	_id?: ObjectId;
 	name?: string;
 	email?: string;

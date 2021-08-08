@@ -3,7 +3,7 @@ import {
 	addOwnerProperty,
 	tenantRegistration,
 	getAllOwnerBuildings,
-	updateOnwerBuilding,
+	updateOwnerBuilding,
 	updateRoomDetails,
 	addBuildings,
 	addRooms,
@@ -27,7 +27,7 @@ router.post('/register-tenant', tenantRegistration);
 
 router.post('/dashboard', getAllOwnerBuildings);
 
-router.put('/update-building', updateOnwerBuilding);
+router.put('/update-building', updateOwnerBuilding);
 
 router.put('/update-rooms-details', updateRoomDetails);
 

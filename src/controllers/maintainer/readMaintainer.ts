@@ -8,16 +8,16 @@ import { ITenant } from '../../models/tenant/interface';
 import { IBuilding, IRooms } from '../../models/property/interface';
 
 import { ObjectId } from 'mongoose';
-import { ITenanatObject, IRoomObject, IBuildingObject, IMaintainerObject } from './maintainerTypes';
+import { ITenantObject, IRoomObject, IBuildingObject, IMaintainerObject } from './maintainerTypes';
 
 export const getTenantInfo = (room: IRooms) => {
 	const tenants = (room.tenants as unknown) as Array<ITenant>;
-	const tenantInfoArray: Array<ITenanatObject> = [];
+	const tenantInfoArray: Array<ITenantObject> = [];
 
 	if (tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenantAsUser = (tenants[k].userId as unknown) as IUser;
-			let tenantInfo: ITenanatObject = {};
+			let tenantInfo: ITenantObject = {};
 
 			const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = tenantAsUser;
 

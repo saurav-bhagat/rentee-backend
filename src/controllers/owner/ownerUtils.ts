@@ -7,11 +7,11 @@ import mongoose, { ObjectId } from 'mongoose';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../../utils/errorUtils';
 import {
 	BasicUser,
-	OwnerDashoardDetail,
+	OwnerDashboardDetail,
 	IDashboardRoom,
 	IDashboardTenant,
-	IDashbhoardBuild,
-	IDashoboardMaintainer,
+	IDashboardBuild,
+	IDashboardMaintainer,
 } from './ownerTypes';
 import randomstring from 'randomstring';
 import User from '../../models/user/User';
@@ -24,7 +24,7 @@ import { ITenant } from '../../models/tenant/interface';
 
 export const findOwner = async (
 	userDocument: IUser
-): Promise<IProperty | null | IUser | BasicUser | OwnerDashoardDetail> => {
+): Promise<IProperty | null | IUser | BasicUser | OwnerDashboardDetail> => {
 	const propertyDetails = await Property.findOne({ ownerId: userDocument._id })
 		.populate({
 			path: 'buildings.rooms',
@@ -50,12 +50,12 @@ export const findOwner = async (
 		return userInfo;
 	}
 	const { _id, ownerId, buildings } = propertyDetails;
-	const tempbuildingArray: Array<IDashbhoardBuild> = [];
+	const tempbuildingArray: Array<IDashboardBuild> = [];
 	for (let i = 0; i < buildings.length; i++) {
-		const tempBuild: IDashbhoardBuild = findBuilding(buildings[i]);
+		const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 		tempbuildingArray.push(tempBuild);
 	}
-	const ownerDashbhoardResult: OwnerDashoardDetail = { _id, ownerId, buildings: tempbuildingArray };
+	const ownerDashbhoardResult: OwnerDashboardDetail = { _id, ownerId, buildings: tempbuildingArray };
 	return ownerDashbhoardResult;
 };
 
@@ -298,21 +298,21 @@ export const findMaintainer = (maintainer: IMaintainer) => {
 	const { joinDate, userId } = maintainer;
 	const maintainerUser = (userId as unknown) as IUser;
 	const { _id, name, email, phoneNumber } = maintainerUser;
-	const maintainerDetail: IDashoboardMaintainer = { _id, name, email, phoneNumber, joinDate };
+	const maintainerDetail: IDashboardMaintainer = { _id, name, email, phoneNumber, joinDate };
 	return maintainerDetail;
 };
 
 export const findBuilding = (building: IBuilding) => {
 	const { _id, name, address } = building;
 	const build = building;
-	let buildingDetail: IDashbhoardBuild;
+	let buildingDetail: IDashboardBuild;
 	const rooms: Array<IDashboardRoom> = [];
 	for (let j = 0; j < build.rooms.length; j++) {
 		const room: IDashboardRoom = findRoom((building.rooms[j] as unknown) as IRooms);
 		rooms.push(room);
 	}
 	if (building.maintainerId) {
-		const maintainerDetail: IDashoboardMaintainer = findMaintainer(
+		const maintainerDetail: IDashboardMaintainer = findMaintainer(
 			(building.maintainerId as unknown) as IMaintainer
 		);
 		buildingDetail = { _id, name, address, rooms, maintainer: maintainerDetail };

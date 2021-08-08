@@ -1,4 +1,9 @@
 import { Request, Response } from 'express';
+import randomstring from 'randomstring';
+
+import validator from 'validator';
+import { ObjectId } from 'mongoose';
+
 import Room from '../../models/property/rooms';
 
 import Property from '../../models/property/property';
@@ -7,16 +12,10 @@ import User from '../../models/user/User';
 import Maintainer from '../../models/maintainer/maintainer';
 import { formatDbError, verifyObjectId } from '../../utils/errorUtils';
 
-import randomstring from 'randomstring';
-import bcrypt from 'bcrypt';
-
-import validator from 'validator';
-import { ObjectId } from 'mongoose';
-import { BasicUser } from './ownerTypes';
-
 // owner add properties after signup
 export const addOwnerProperty = async (req: Request, res: Response) => {
 	if (req.isAuth) {
+		// buildingObj type can found in ( ./ownerTypes ) file from IBuildingObjectOwnerProperty.buildings interface
 		const { ownerId, buildingsObj } = req.body;
 
 		if (!ownerId || !verifyObjectId([ownerId])) {

@@ -11,6 +11,7 @@ export interface BasicUser {
 export interface OwnerDashboardDetail {
 	_id: ObjectId;
 	ownerId: ObjectId;
+	userType?: string;
 	buildings?: Array<IDashboardBuild>;
 }
 

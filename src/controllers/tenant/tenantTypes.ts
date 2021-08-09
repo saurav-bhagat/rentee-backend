@@ -14,4 +14,5 @@ export interface TenantObj {
 	ownerName?: string;
 	ownerEmail?: string;
 	ownerPhoneNumber?: string;
+	userType?: string;
 }

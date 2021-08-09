@@ -92,9 +92,10 @@ export const findMaintainer = async (userDocument: IUser): Promise<any> => {
 
 	if (property && maintainerDoc) {
 		let builds: Array<IBuilding> = [];
-		builds = property.buildings.filter(
-			(building) => building.maintainerId.toString() === userDocument._id.toString()
+		builds = property.buildings.filter((building) =>
+			building.maintainerId ? building.maintainerId.toString() === maintainerDoc._id.toString() : null
 		);
+
 		const ownerDetails = (maintainerDoc.ownerId as unknown) as IUser;
 
 		const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber } = ownerDetails;
@@ -120,10 +121,11 @@ export const findMaintainer = async (userDocument: IUser): Promise<any> => {
 	} else {
 		throw new Error('Property doc not found!');
 	}
-
+	const userType = userDocument.userType;
 	return new Promise((resolve) => {
 		resolve({
 			maintainerResObj,
+			userType,
 		});
 	});
 };

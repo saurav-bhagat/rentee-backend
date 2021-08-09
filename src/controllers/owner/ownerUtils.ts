@@ -55,7 +55,8 @@ export const findOwner = async (
 		const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 		tempbuildingArray.push(tempBuild);
 	}
-	const ownerDashbhoardResult: OwnerDashboardDetail = { _id, ownerId, buildings: tempbuildingArray };
+	const { userType } = userDocument;
+	const ownerDashbhoardResult: OwnerDashboardDetail = { _id, ownerId, userType, buildings: tempbuildingArray };
 	return ownerDashbhoardResult;
 };
 

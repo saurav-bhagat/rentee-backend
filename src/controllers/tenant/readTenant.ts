@@ -23,6 +23,7 @@ export interface TenantObj {
 	ownerName?: string;
 	ownerEmail?: string;
 	ownerPhoneNumber?: string;
+	userType?: string;
 }
 
 // Tenant dashboard details
@@ -67,6 +68,7 @@ export const tenantInfo = async (req: Request, res: Response) => {
 					const { name: buildingName, address: buildingAddress } = building;
 
 					result = {
+						userType: 'Tenant',
 						tenantEmail,
 						tenantName,
 						tenantPhoneNumber,

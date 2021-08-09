@@ -4,7 +4,7 @@ import Property from '../../models/property/property';
 import User from '../../models/user/User';
 import { verifyObjectId } from '../../utils/errorUtils';
 
-import { BasicUser, OwnerDashboardDetail, IDashboardBuild } from './ownerTypes';
+import { OwnerDashboardDetail, IDashboardBuild } from './ownerTypes';
 
 import { findBuilding } from './ownerUtils';
 

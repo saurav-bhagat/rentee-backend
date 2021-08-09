@@ -10,12 +10,13 @@ import { findBuilding } from './ownerUtils';
 
 // owner dashboard details
 export const getAllOwnerBuildings = async (req: Request, res: Response) => {
-	const { ownerId } = req.body;
-	console.log(ownerId);
-	if (!ownerId || !verifyObjectId([ownerId])) {
-		return res.status(400).json({ err: 'User details missing' });
-	}
 	if (req.isAuth) {
+		const { ownerId } = req.body;
+
+		if (!ownerId || !verifyObjectId([ownerId])) {
+			return res.status(400).json({ err: 'Invalid owner' });
+		}
+
 		const owner = await User.findOne({ _id: ownerId, userType: 'Owner' });
 		if (owner) {
 			const ownerDetails = await Property.findOne({ ownerId })
@@ -45,7 +46,7 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				return res.status(200).json({ ownerDashboardResult });
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;
-				const ownerInfo: BasicUser = { _id, email, name, phoneNumber, userType };
+				const ownerInfo = { _id, email, name, phoneNumber, userType, buildings: [] };
 				// TODO:  send userID for the tenants
 				return res.status(200).json({ ownerInfo });
 			}

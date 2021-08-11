@@ -236,10 +236,10 @@ export class AuthController {
 		// because it expect a doc structure like User.create method create
 		const { accessToken, refreshToken, user: registeredUser } = await this.generateTokensForUser(user.ops[0]);
 		const { _id, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
-		const ownerBasicDetails = { _id, userType, ownerPhoneNumber };
+		const userDetails = { _id, userType, phoneNumber: ownerPhoneNumber };
 		return new Promise((resolve) => {
 			resolve({
-				ownerBasicDetails,
+				userDetails,
 				accessToken,
 				refreshToken,
 				firstLogin: true,

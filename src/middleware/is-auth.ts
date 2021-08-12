@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { IUser } from '../models/user/interface';
 
-export default (req: Request, res: Response, next: NextFunction): void => {
+export default (req: Request, res: Response, next: NextFunction) => {
 	const authHeader = req.get('Authorization');
 	let decodedToken: IUser;
 
@@ -23,7 +23,11 @@ export default (req: Request, res: Response, next: NextFunction): void => {
 	} catch (err) {
 		console.log(err);
 		req.isAuth = false;
-		return next();
+		req.tokenError = err.message;
+		if (err.message === 'jwt expired') {
+			return res.status(403).json({ err: 'jwt expired' });
+		}
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
 	if (!decodedToken) {
 		req.isAuth = false;

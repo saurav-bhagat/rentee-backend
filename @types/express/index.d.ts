@@ -4,7 +4,8 @@ declare global{
     namespace Express {
         interface Request {
             isAuth: boolean,
-            user: IUser
+            user: IUser,
+            tokenError: string
         }
     }
 }

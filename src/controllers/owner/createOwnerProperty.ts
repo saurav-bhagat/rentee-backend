@@ -45,7 +45,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					if (building.maintainerDetail && Object.keys(building.maintainerDetail).length !== 0) {
 						let maintainerInfo = building.maintainerDetail;
 
-						const { email: maintainerEmail, phoneNumber: maintainerPhone } = maintainerInfo;
+						const { name: maintainerName, phoneNumber: maintainerPhone } = maintainerInfo;
 
 						if (maintainerPhone && !validator.isMobilePhone(maintainerPhone)) {
 							return res.status(400).json({ err: `Invalid maintainer phone number ${maintainerPhone}` });
@@ -64,8 +64,8 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 							});
 						} else {
 							// create new maintainer
-							if (maintainerEmail && !validator.isEmail(maintainerEmail)) {
-								return res.status(400).json({ err: `Invalid maintainer email ${maintainerEmail}` });
+							if (!maintainerName) {
+								return res.status(400).json({ err: `Invalid maintainer name ${maintainerName}` });
 							}
 							const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
 							const userType = 'Maintainer';

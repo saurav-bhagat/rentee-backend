@@ -235,8 +235,8 @@ export class AuthController {
 		// our generateTokensForUser is no longer able to genrate a token
 		// because it expect a doc structure like User.create method create
 		const { accessToken, refreshToken, user: registeredUser } = await this.generateTokensForUser(user.ops[0]);
-		const { _id, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
-		const userDetails = { _id, userType, phoneNumber: ownerPhoneNumber };
+		const { _id: ownerId, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
+		const userDetails = { ownerId, userType, phoneNumber: ownerPhoneNumber };
 		return new Promise((resolve) => {
 			resolve({
 				userDetails,

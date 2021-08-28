@@ -25,7 +25,10 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 		try {
 			if (buildingsObj !== undefined && buildingsObj.length !== 0) {
 				// Create property for owner
-				const property = new Property({ ownerId });
+				let property = await Property.findOne({ ownerId });
+				if (property == null) {
+					property = new Property({ ownerId });
+				}
 
 				for (let i = 0; i < buildingsObj.length; i += 1) {
 					const tempRooms: Array<ObjectId> = [];
@@ -105,9 +108,18 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 							{ userId: maintainerIdInBuilding },
 							{ $push: { buildings: building._id } }
 						);
+						const isBuildingPresentInBuildingArray = await Maintainer.findOne({
+							buildings: [building._id],
+						});
 
+						if (!isBuildingPresentInBuildingArray) {
+							await Maintainer.findOneAndUpdate(
+								{ _id: maintainerIdInBuilding },
+								{ $push: { buildings: building._id } }
+							);
+						}
 						// maintainer model getting saved for the first time with maintainer-specific details.
-						if (!isMaintainer) {
+						if (!isMaintainer && !isBuildingPresentInBuildingArray) {
 							const buildingIdArray: Array<ObjectId> = [];
 							buildingIdArray.push(building._id);
 							const doc = {

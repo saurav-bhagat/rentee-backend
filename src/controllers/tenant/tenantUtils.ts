@@ -10,7 +10,8 @@ export const findTenant = async (userDocument: IUser): Promise<any> => {
 	const tenantDocument = await Tenant.findOne({ userId: userDocument._id })
 		.populate({ path: 'ownerId' })
 		.populate({ path: 'roomId' })
-		.populate({ path: 'userId' });
+		.populate({ path: 'userId' })
+		.populate({ path: 'receipts' });
 	if (tenantDocument == null) {
 		throw new Error('Unable to find User');
 	}
@@ -66,6 +67,7 @@ export const findTenant = async (userDocument: IUser): Promise<any> => {
 		ownerName,
 		ownerEmail,
 		ownerPhoneNumber,
+		receipts: tenantDocument.receipts,
 	};
 	return new Promise((resolve, reject) => {
 		if (result == null) {

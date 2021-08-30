@@ -10,10 +10,11 @@ const tenantSchema = new Schema(
 		ownerId: { type: Schema.Types.ObjectId, ref: 'user' },
 		roomId: { type: Schema.Types.ObjectId, ref: 'room' },
 		buildId: { type: Schema.Types.ObjectId },
+		receipts: [{ type: Schema.Types.ObjectId, ref: 'receipt' }],
 	},
 	{ timestamps: true }
 );
 
-const tenant = model<ITenant>('tenant', tenantSchema);
+const Tenant = model<ITenant>('tenant', tenantSchema);
 
-export default tenant;
+export default Tenant;

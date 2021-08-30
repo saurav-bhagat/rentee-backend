@@ -1,3 +1,5 @@
+import { ObjectId } from 'mongoose';
+
 export interface TenantObj {
 	tenantEmail?: string;
 	tenantName?: string;
@@ -15,4 +17,5 @@ export interface TenantObj {
 	ownerEmail?: string;
 	ownerPhoneNumber?: string;
 	userType?: string;
+	receipts?: Array<ObjectId>;
 }

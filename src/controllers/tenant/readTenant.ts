@@ -6,6 +6,7 @@ import { verifyObjectId } from '../../utils/errorUtils';
 
 import { IUser } from '../../models/user/interface';
 import { IRooms } from '../../models/property/interface';
+import { ObjectId } from 'mongoose';
 
 export interface TenantObj {
 	tenantEmail?: string;
@@ -24,6 +25,7 @@ export interface TenantObj {
 	ownerEmail?: string;
 	ownerPhoneNumber?: string;
 	userType?: string;
+	receipts?: Array<ObjectId>;
 }
 
 // Tenant dashboard details
@@ -37,7 +39,10 @@ export const tenantInfo = async (req: Request, res: Response) => {
 	}
 
 	// finding a tenant with userId
-	const tenantDocument = await Tenant.findOne({ userId }).populate({ path: 'ownerId' }).populate({ path: 'roomId' });
+	const tenantDocument = await Tenant.findOne({ userId })
+		.populate({ path: 'ownerId' })
+		.populate({ path: 'roomId' })
+		.populate({ path: 'receipts' });
 
 	if (tenantDocument) {
 		const {
@@ -84,6 +89,7 @@ export const tenantInfo = async (req: Request, res: Response) => {
 						ownerName,
 						ownerEmail,
 						ownerPhoneNumber,
+						receipts: tenantDocument.receipts,
 					};
 					return res.status(200).json({ result, msg: 'successfully fetch tenant' });
 				} else {

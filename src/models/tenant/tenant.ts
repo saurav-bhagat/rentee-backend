@@ -11,6 +11,7 @@ const tenantSchema = new Schema(
 		roomId: { type: Schema.Types.ObjectId, ref: 'room' },
 		buildId: { type: Schema.Types.ObjectId },
 		receipts: [{ type: Schema.Types.ObjectId, ref: 'receipt' }],
+		payments: [{ type: Schema.Types.ObjectId, ref: 'payment' }],
 	},
 	{ timestamps: true }
 );

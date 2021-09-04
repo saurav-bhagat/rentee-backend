@@ -2,12 +2,14 @@ import https from 'https';
 import { Request, Response } from 'express';
 import PaytmChecksum from './PaytmChecksum';
 import { v4 as uuid4 } from 'uuid';
+import Payment from '../models/payment/payment';
+import Tenant from '../models/tenant/tenant';
 
 export const initiatePayment = (req: Request, res: Response) => {
 	const { amount, name } = req.body;
 	const data = { name, amount };
-
-	const orderId = uuid4();
+	let { orderId } = req.body;
+	orderId += uuid4().substr(0, 3);
 	const customerId = uuid4();
 
 	const paytmParams: any = {};
@@ -40,9 +42,10 @@ export const initiatePayment = (req: Request, res: Response) => {
 	paytmGenerateSignatueUtil(req, res, paytmParams, options, true, {}, orderId);
 };
 
-export const paymentResponse = (req: any, res: any) => {
+export const paymentResponse = async (req: any, res: any) => {
 	const data = req.body;
 	const paytmChecksum = data.CHECKSUMHASH;
+
 	const isVerifySignature = PaytmChecksum.verifySignature(data, process.env.MERCHANT_KEY, paytmChecksum);
 	if (isVerifySignature) {
 		const paytmParams: any = {};
@@ -66,6 +69,48 @@ export const paymentResponse = (req: any, res: any) => {
 			},
 		};
 		paytmGenerateSignatueUtil(req, res, paytmParams, options, false, data, {});
+		const {
+			CURRENCY: currency,
+			GATEWAYNAME: gatewayName,
+			RESPMSG: respMsg,
+			BANKNAME: bankName,
+			PAYMENTMODE: paymentMode,
+			RESPCODE: respCode,
+			TXNID: txnId,
+			TXNAMOUNT: txnAmount,
+			ORDERID: orderId,
+			STATUS: status,
+			BANKTXNID: bankTxnId,
+			TXNDATE: txnDate,
+		} = data;
+
+		const paymentDocument = await Payment.create({
+			currency,
+			gatewayName,
+			respMsg,
+			bankName,
+			respCode,
+			orderId,
+			bankTxnId,
+			txnAmount,
+			txnId,
+			status,
+			txnDate,
+			paymentMode,
+		});
+
+		if (paymentDocument) {
+			const customerId = orderId.substr(0, 24);
+			const tenantDocument = await Tenant.findOneAndUpdate(
+				{ userId: customerId },
+				{ $push: { payments: paymentDocument._id } }
+			);
+			if (!tenantDocument) {
+				console.log('unable to push payment id in tenant ');
+			}
+		} else {
+			console.log('unable to create payment document');
+		}
 	} else {
 		res.status(400).json('Checksum Mismatched');
 	}

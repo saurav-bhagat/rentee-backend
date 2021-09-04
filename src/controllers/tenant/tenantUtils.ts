@@ -51,6 +51,7 @@ export const findTenant = async (userDocument: IUser): Promise<any> => {
 	const { name: buildingName, address: buildingAddress } = <any>building;
 
 	result = {
+		_id: userDocument._id,
 		userType: userDocument.userType,
 		tenantEmail,
 		tenantName,

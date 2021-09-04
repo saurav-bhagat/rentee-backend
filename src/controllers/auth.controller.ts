@@ -100,7 +100,7 @@ export class AuthController {
 				accessToken: accessToken,
 				refreshToken: newRefreshToken,
 			});
-		} catch (error) {
+		} catch (error: any) {
 			console.log('error is: ', error);
 			return res.status(403).json({ err: error.message });
 		}
@@ -129,7 +129,7 @@ export class AuthController {
                         <p><a href="${process.env.CLIENT_URL}/resetpassword/${token}">Rest Password Link</a></p>
                     `,
 				};
-				if (nodeMailer.sendMail(mailData))
+				if (await nodeMailer.sendMail(mailData))
 					return res.status(200).json({ msg: 'Please check your registered Email ID', token, updatedUser });
 			} else {
 				return res.status(400).json({ err: 'Email Does not exist' });

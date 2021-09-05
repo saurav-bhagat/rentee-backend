@@ -154,7 +154,8 @@ export const paytmGenerateSignatueUtil = (
 				});
 			} else {
 				post_res.on('end', function () {
-					res.render('PaymentResponse', { code: data.RESPCODE });
+					data = JSON.stringify(data);
+					res.render('PaymentResponse', { data });
 					res.end();
 				});
 			}
@@ -162,6 +163,11 @@ export const paytmGenerateSignatueUtil = (
 		post_req.write(post_data);
 		post_req.on('error', (err) => {
 			console.log('post req in err in callback ', err);
+			let data = `{
+				"RESPMSG":"Server error"
+			}`;
+			data = JSON.stringify(data);
+			res.render('PaymentResponse', { data });
 		});
 		post_req.end();
 	});

@@ -10,4 +10,5 @@ export interface ITenant extends Document {
 	roomId: Schema.Types.ObjectId;
 	buildId: Schema.Types.ObjectId;
 	receipts: Array<Schema.Types.ObjectId>;
+	payments: Array<Schema.Types.ObjectId>;
 }

@@ -1,6 +1,7 @@
 import { ObjectId } from 'mongoose';
 
 export interface TenantObj {
+	_id?: ObjectId;
 	tenantEmail?: string;
 	tenantName?: string;
 	tenantPhoneNumber?: string;

@@ -9,6 +9,7 @@ export const initiatePayment = (req: Request, res: Response) => {
 	const { amount, name } = req.body;
 	const data = { name, amount };
 	let { orderId } = req.body;
+	// orderId is tenant userId + uuid
 	orderId += uuid4().substr(0, 3);
 	const customerId = uuid4();
 
@@ -28,10 +29,7 @@ export const initiatePayment = (req: Request, res: Response) => {
 		},
 	};
 	const options = {
-		/* for Staging */
 		hostname: process.env.PAYTM_HOST_NAME,
-		/* for Production */
-		// hostname: 'process.env.PAYTM_HOST_NAME',
 		port: 443,
 		path: `/theia/api/v1/initiateTransaction?mid=${process.env.MERCHANT_ID}&orderId=${orderId}`,
 		method: 'POST',
@@ -55,12 +53,7 @@ export const paymentResponse = async (req: any, res: any) => {
 			orderId: data.ORDERID,
 		};
 		const options = {
-			/* for Staging */
 			hostname: process.env.PAYTM_HOST_NAME,
-
-			/* for Production */
-			// hostname: 'process.env.PAYTM_HOST_NAME',
-
 			port: 443,
 			path: '/v3/order/status',
 			method: 'POST',
@@ -100,9 +93,9 @@ export const paymentResponse = async (req: any, res: any) => {
 		});
 
 		if (paymentDocument) {
-			const customerId = orderId.substr(0, 24);
+			const tenantUserId = orderId.substr(0, 24);
 			const tenantDocument = await Tenant.findOneAndUpdate(
-				{ userId: customerId },
+				{ userId: tenantUserId },
 				{ $push: { payments: paymentDocument._id } }
 			);
 			if (!tenantDocument) {

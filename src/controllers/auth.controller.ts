@@ -90,16 +90,19 @@ export class AuthController {
 			// verifyrefresh token method verify token and give us the payload inside it
 			const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
-			await User.findUserForRefreshToken(userData._id, refreshToken);
+			const userDocument = await User.findUserForRefreshToken(userData._id, refreshToken);
 
-			const { user, accessToken, refreshToken: newRefreshToken } = await this.generateTokensForUser(userData);
-			const { _id, phoneNumber, userType, name } = user;
-			const userDetails = { _id, phoneNumber, userType, name };
-			return res.status(200).json({
+			const userDetails = await this.findDashboardForUser(userDocument);
+			const { accessToken, refreshToken: refreshToken1 } = await this.generateTokensForUser(userDocument);
+
+			const result = {
 				userDetails,
-				accessToken: accessToken,
-				refreshToken: newRefreshToken,
-			});
+				accessToken,
+				refreshToken: refreshToken1,
+				firstLogin: false,
+			};
+
+			return res.status(200).json({ userDocument: result });
 		} catch (error: any) {
 			console.log('error is: ', error);
 			return res.status(403).json({ err: error.message });

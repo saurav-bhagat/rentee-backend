@@ -6,7 +6,7 @@ import Property from '../../models/property/property';
 
 export const ownerAddBankAccountInfo = async (req: Request, res: Response) => {
 	const { accountName, accountNumber, ifsc, bankName, beneficiaryName, ownerId } = req.body;
-	if (req.isAuth || verifyObjectId(ownerId)) {
+	if (req.isAuth && verifyObjectId(ownerId)) {
 		if (isEmptyFields({ accountName, accountNumber, ifsc, bankName })) {
 			return res.status(400).json({ err: 'Fields cannot be empty' });
 		}

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { IOwner } from '../../models/owner/interface';
 import Property from '../../models/property/property';
 
 import User from '../../models/user/User';
@@ -34,15 +35,36 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 					populate: {
 						path: 'userId',
 					},
+				})
+				.populate({
+					path: 'ownerInfo',
 				});
+
 			if (ownerDetails) {
-				const { _id, ownerId, buildings } = ownerDetails;
+				const { _id, ownerId, buildings, ownerInfo } = ownerDetails;
+				const {
+					accountName,
+					accountNumber,
+					ifsc,
+					bankName,
+					beneficiaryName,
+				} = (ownerInfo as unknown) as IOwner;
+
 				const tempbuildingArray: Array<IDashboardBuild> = [];
 				for (let i = 0; i < buildings.length; i++) {
 					const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 					tempbuildingArray.push(tempBuild);
 				}
-				const ownerDashboardResult: OwnerDashboardDetail = { _id, ownerId, buildings: tempbuildingArray };
+				const ownerDashboardResult: OwnerDashboardDetail = {
+					_id,
+					ownerId,
+					buildings: tempbuildingArray,
+					accountName,
+					accountNumber,
+					ifsc,
+					bankName,
+					beneficiaryName,
+				};
 				return res.status(200).json({ ownerDashboardResult });
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;

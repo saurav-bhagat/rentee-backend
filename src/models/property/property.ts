@@ -7,6 +7,7 @@ const propertySchema = new Schema(
 	{
 		ownerId: { type: Schema.Types.ObjectId, ref: 'user', unique: true },
 		buildings: [buildingSchema],
+		ownerInfo: { type: Schema.Types.ObjectId, ref: 'Owner', unique: true },
 	},
 	{ timestamps: true }
 );

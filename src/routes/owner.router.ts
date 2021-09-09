@@ -12,6 +12,7 @@ import {
 	removeMaintainer,
 	removeBuilding,
 	removeRoom,
+	ownerAddBankAccountInfo,
 } from '../controllers/owner';
 
 const router: Router = Router();
@@ -20,6 +21,8 @@ const router: Router = Router();
 router.get('/ping', (req, res) => {
 	res.status(200).send('owner ping');
 });
+
+router.post('/add-bank-info', ownerAddBankAccountInfo);
 
 router.post('/add-property', addOwnerProperty);
 

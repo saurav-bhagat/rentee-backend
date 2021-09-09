@@ -21,6 +21,7 @@ import Rooms from '../../models/property/rooms';
 import { IMaintainer } from '../../models/maintainer/interface';
 import { IBuilding, IRooms, IProperty } from '../../models/property/interface';
 import { ITenant } from '../../models/tenant/interface';
+import { IOwner } from '../../models/owner/interface';
 
 export const findOwner = async (
 	userDocument: IUser
@@ -40,6 +41,9 @@ export const findOwner = async (
 			populate: {
 				path: 'userId',
 			},
+		})
+		.populate({
+			path: 'ownerInfo',
 		});
 	if (propertyDetails == null) {
 		// throw new Error('Property details not added by owner yet');
@@ -49,14 +53,26 @@ export const findOwner = async (
 
 		return userInfo;
 	}
-	const { _id, ownerId, buildings } = propertyDetails;
+	const { _id, ownerId, buildings, ownerInfo } = propertyDetails;
+	const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
+
 	const tempbuildingArray: Array<IDashboardBuild> = [];
 	for (let i = 0; i < buildings.length; i++) {
 		const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 		tempbuildingArray.push(tempBuild);
 	}
 	const { userType } = userDocument;
-	const ownerDashbhoardResult: OwnerDashboardDetail = { _id, ownerId, userType, buildings: tempbuildingArray };
+	const ownerDashbhoardResult: OwnerDashboardDetail = {
+		_id,
+		ownerId,
+		userType,
+		buildings: tempbuildingArray,
+		accountName,
+		accountNumber,
+		ifsc,
+		bankName,
+		beneficiaryName,
+	};
 	return ownerDashbhoardResult;
 };
 

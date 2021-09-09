@@ -13,6 +13,11 @@ export interface OwnerDashboardDetail {
 	ownerId: ObjectId;
 	userType?: string;
 	buildings?: Array<IDashboardBuild>;
+	accountName?: string;
+	accountNumber?: string;
+	ifsc?: string;
+	bankName?: string;
+	beneficiaryName?: string;
 }
 
 export interface IDashboardBuild {

@@ -22,4 +22,5 @@ export interface IProperty extends Document {
 	_id: Schema.Types.ObjectId;
 	ownerId: Schema.Types.ObjectId;
 	buildings: mongoose.Types.Array<IBuilding>;
+	ownerInfo?: Schema.Types.ObjectId;
 }

@@ -49,29 +49,43 @@ export const findOwner = async (
 		// throw new Error('Property details not added by owner yet');
 		// TODO: return user details even if property is not added
 		const { _id, name, email, phoneNumber, userType } = userDocument;
-		const userInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+		const userInfo: BasicUser = { ownerId: _id, name, email, phoneNumber, userType };
 
 		return userInfo;
 	}
+
+	const { userType } = userDocument;
 	const { _id, ownerId, buildings, ownerInfo } = propertyDetails;
-	const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
 
 	const tempbuildingArray: Array<IDashboardBuild> = [];
 	for (let i = 0; i < buildings.length; i++) {
 		const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 		tempbuildingArray.push(tempBuild);
 	}
-	const { userType } = userDocument;
-	const ownerDashbhoardResult: OwnerDashboardDetail = {
+
+	let ownerDashbhoardResult: OwnerDashboardDetail = {};
+	if (ownerInfo) {
+		const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
+
+		ownerDashbhoardResult = {
+			_id,
+			ownerId,
+			userType,
+			buildings: tempbuildingArray,
+			accountName,
+			accountNumber,
+			ifsc,
+			bankName,
+			beneficiaryName,
+		};
+		return ownerDashbhoardResult;
+	}
+
+	ownerDashbhoardResult = {
 		_id,
 		ownerId,
 		userType,
 		buildings: tempbuildingArray,
-		accountName,
-		accountNumber,
-		ifsc,
-		bankName,
-		beneficiaryName,
 	};
 	return ownerDashbhoardResult;
 };

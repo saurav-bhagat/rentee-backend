@@ -2,6 +2,7 @@ import { ObjectId } from 'mongoose';
 
 export interface BasicUser {
 	_id?: ObjectId;
+	ownerId?: ObjectId;
 	name?: string;
 	email?: string;
 	phoneNumber?: string;
@@ -9,8 +10,8 @@ export interface BasicUser {
 }
 
 export interface OwnerDashboardDetail {
-	_id: ObjectId;
-	ownerId: ObjectId;
+	_id?: ObjectId;
+	ownerId?: ObjectId;
 	userType?: string;
 	buildings?: Array<IDashboardBuild>;
 	accountName?: string;

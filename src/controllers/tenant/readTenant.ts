@@ -1,12 +1,16 @@
 import { Request, Response } from 'express';
-import Property from '../../models/property/property';
+import { ObjectId } from 'mongoose';
 
+import Property from '../../models/property/property';
 import Tenant from '../../models/tenant/tenant';
-import { verifyObjectId } from '../../utils/errorUtils';
 
 import { IUser } from '../../models/user/interface';
 import { IRooms } from '../../models/property/interface';
-import { ObjectId } from 'mongoose';
+
+import User from '../../models/user/User';
+import { findTenant } from '.';
+
+import { verifyObjectId } from '../../utils/errorUtils';
 
 export interface TenantObj {
 	tenantEmail?: string;
@@ -29,6 +33,21 @@ export interface TenantObj {
 }
 
 // Tenant dashboard details
+export const getTenantDashboard = async (req: Request, res: Response) => {
+	const { userId } = req.body;
+	if (req.isAuth && verifyObjectId([userId])) {
+		const userDocument = await User.findOne({ _id: userId });
+		if (userDocument) {
+			const tenantDetails = await findTenant(userDocument);
+			return res.status(200).json({ tenantDetails });
+		} else {
+			return res.status(400).json({ err: 'Tenant not found' });
+		}
+	} else {
+		return res.status(403).json({ err: 'Authorization error' });
+	}
+};
+
 export const tenantInfo = async (req: Request, res: Response) => {
 	const { userId, name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = req.body;
 

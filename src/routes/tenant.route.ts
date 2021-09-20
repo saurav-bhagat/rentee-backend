@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { updateTenantPassword, tenantInfo } from '../controllers/tenant';
+import { updateTenantPassword, getTenantDashboard } from '../controllers/tenant';
 
 const router: Router = Router();
 
@@ -11,6 +11,6 @@ router.get('/ping', (req, res) => {
 
 router.put('/update-password', updateTenantPassword);
 
-router.post('/dashboard', tenantInfo);
+router.post('/dashboard', getTenantDashboard);
 
 export default router;

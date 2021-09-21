@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
+import mongoose, { ObjectId } from 'mongoose';
+
+import randomstring from 'randomstring';
+import validator from 'validator';
+
+import { addMonths, setDate } from 'date-fns';
 
 import { IUser } from '../../models/user/interface';
 import Property from '../../models/property/property';
+
 import Maintainer from '../../models/maintainer/maintainer';
-import mongoose, { ObjectId } from 'mongoose';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../../utils/errorUtils';
+
 import {
 	BasicUser,
 	OwnerDashboardDetail,
@@ -13,14 +20,16 @@ import {
 	IDashboardBuild,
 	IDashboardMaintainer,
 } from './ownerTypes';
-import randomstring from 'randomstring';
+
 import User from '../../models/user/User';
-import validator from 'validator';
 import Tenant from '../../models/tenant/tenant';
+
 import Rooms from '../../models/property/rooms';
 import { IMaintainer } from '../../models/maintainer/interface';
+
 import { IBuilding, IRooms, IProperty } from '../../models/property/interface';
 import { ITenant } from '../../models/tenant/interface';
+
 import { IOwner } from '../../models/owner/interface';
 
 export const findOwner = async (
@@ -148,7 +157,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const userId = userDoc._id;
 
 				const joinDate = new Date();
-				const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+				const nextMonthDate = setDate(addMonths(new Date(), 1), 1);
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
 

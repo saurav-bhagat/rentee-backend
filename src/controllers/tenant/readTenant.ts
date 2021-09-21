@@ -20,8 +20,8 @@ export interface TenantObj {
 	roomType?: string;
 	rent?: number;
 	floor?: string;
-	joinDate?: string;
-	rentDueDate?: string;
+	joinDate?: Date;
+	rentDueDate?: Date;
 	security?: number;
 	buildingName?: string;
 	buildingAddress?: string;

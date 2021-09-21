@@ -43,8 +43,8 @@ export interface IDashboardTenant {
 	name: string;
 	email: string;
 	phoneNumber: string;
-	joinDate: string;
-	rentDueDate: string;
+	joinDate: Date;
+	rentDueDate: Date;
 	securityAmount: number;
 }
 

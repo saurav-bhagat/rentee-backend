@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 // View is used for payment integration as web view
 // View engine setup
-app.set('views', path.join(__dirname, 'views'));
+// app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 // db setup

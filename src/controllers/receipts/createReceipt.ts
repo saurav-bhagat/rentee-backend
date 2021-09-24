@@ -20,7 +20,7 @@ export const createReceipt = async (req: Request, res: Response) => {
 			{ userId },
 			{
 				$push: { receipts: receipt._id },
-				rentDueDate: setDate(addMonths(new Date(rentDueDate), 1), 1),
+				rentDueDate: setDate(addMonths(new Date(rentDueDate), 1), 5),
 			}
 		);
 		if (tenantDocument) {

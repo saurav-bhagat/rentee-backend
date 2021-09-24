@@ -158,7 +158,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const userId = userDoc._id;
 
 				const joinDate = new Date();
-				const nextMonthDate = setDate(addMonths(new Date(), 1), 1);
+				const nextMonthDate = setDate(addMonths(new Date(), 1), 5);
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
 

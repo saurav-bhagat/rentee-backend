@@ -31,6 +31,7 @@ import { IBuilding, IRooms, IProperty } from '../../models/property/interface';
 import { ITenant } from '../../models/tenant/interface';
 
 import { IOwner } from '../../models/owner/interface';
+import { IPayment, IPaymentDetail } from '../../models/payment/interface';
 
 export const findOwner = async (
 	userDocument: IUser
@@ -315,9 +316,20 @@ export const findRoom = (room: IRooms) => {
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const { userId, joinDate, rentDueDate, securityAmount } = (tenant as unknown) as ITenant;
+			const { userId, joinDate, rentDueDate, securityAmount, payments } = (tenant as unknown) as ITenant;
 			const tenantRef = (userId as unknown) as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
+			const paymentDetails: Array<IPaymentDetail> = [];
+			if (payments && payments.length) {
+				for (let paymentIndex = 0; paymentIndex < payments.length; paymentIndex++) {
+					const payment = (payments[paymentIndex] as unknown) as IPayment;
+					const { respCode } = payment;
+					if (respCode === '01') {
+						const { txnAmount, txnDate, paymentMode } = payment;
+						paymentDetails.push({ txnAmount, txnDate, paymentMode });
+					}
+				}
+			}
 			const tempTenat: IDashboardTenant = {
 				_id,
 				name,
@@ -326,6 +338,7 @@ export const findRoom = (room: IRooms) => {
 				joinDate,
 				rentDueDate,
 				securityAmount,
+				paymentDetails,
 			};
 			tenantsArray.push(tempTenat);
 		}

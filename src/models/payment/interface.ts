@@ -15,3 +15,9 @@ export interface IPayment extends Document {
 	bankTxnId: string;
 	txnDate: Date;
 }
+
+export interface IPaymentDetail {
+	txnAmount: string;
+	txnDate: Date;
+	paymentMode: string;
+}

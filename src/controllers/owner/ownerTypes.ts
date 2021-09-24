@@ -1,4 +1,5 @@
 import { ObjectId } from 'mongoose';
+import { IPaymentDetail } from '../../models/payment/interface';
 
 export interface BasicUser {
 	_id?: ObjectId;
@@ -46,6 +47,7 @@ export interface IDashboardTenant {
 	joinDate: Date;
 	rentDueDate: Date;
 	securityAmount: number;
+	paymentDetails?: Array<IPaymentDetail>;
 }
 
 export interface IDashboardMaintainer {

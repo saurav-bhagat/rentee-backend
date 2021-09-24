@@ -26,7 +26,7 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 					populate: {
 						path: 'tenants',
 						populate: {
-							path: 'userId',
+							path: 'userId payments',
 						},
 					},
 				})
@@ -39,36 +39,46 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				.populate({
 					path: 'ownerInfo',
 				});
-
 			if (ownerDetails) {
 				const { _id, ownerId, buildings, ownerInfo } = ownerDetails;
-				const {
-					accountName,
-					accountNumber,
-					ifsc,
-					bankName,
-					beneficiaryName,
-				} = (ownerInfo as unknown) as IOwner;
 
 				const tempbuildingArray: Array<IDashboardBuild> = [];
 				for (let i = 0; i < buildings.length; i++) {
 					const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 					tempbuildingArray.push(tempBuild);
 				}
-				const ownerDashboardResult: OwnerDashboardDetail = {
+
+				let ownerDashboardResult: OwnerDashboardDetail = {};
+				if (ownerInfo) {
+					const {
+						accountName,
+						accountNumber,
+						ifsc,
+						bankName,
+						beneficiaryName,
+					} = (ownerInfo as unknown) as IOwner;
+
+					ownerDashboardResult = {
+						_id,
+						ownerId,
+						buildings: tempbuildingArray,
+						accountName,
+						accountNumber,
+						ifsc,
+						bankName,
+						beneficiaryName,
+					};
+					return res.status(200).json({ ownerDashboardResult });
+				}
+				ownerDashboardResult = {
 					_id,
 					ownerId,
 					buildings: tempbuildingArray,
-					accountName,
-					accountNumber,
-					ifsc,
-					bankName,
-					beneficiaryName,
 				};
 				return res.status(200).json({ ownerDashboardResult });
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;
-				const ownerInfo = { _id, email, name, phoneNumber, userType, buildings: [] };
+				const ownerInfo = { ownerId: _id, email, name, phoneNumber, userType, buildings: [] };
 				// TODO:  send userID for the tenants
 				return res.status(200).json({ ownerInfo });
 			}

@@ -6,6 +6,7 @@ import authRouter from './auth.router';
 import paytmRouter from './paytm.router';
 import receiptRouter from './receipt.router';
 import isAuth from '../middleware/is-auth';
+import admin from './admin.router';
 
 const router: Router = Router();
 
@@ -14,6 +15,7 @@ router.use('/tenant', isAuth, tenantRouter);
 router.use('/auth', isAuth, authRouter);
 router.use('/payment', paytmRouter);
 router.use('/receipt', isAuth, receiptRouter);
+router.use('/admin', admin);
 
 router.use('/health', (req, res) => {
 	res.status(200).json({

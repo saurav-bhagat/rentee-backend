@@ -17,7 +17,7 @@ import {
 	ITenantInfoForAdmin,
 } from './adminType';
 
-export const findReceipts = (receipts: ObjectId[]) => {
+export const formatReceiptResponse = (receipts: ObjectId[]) => {
 	const receiptInfoArray: Array<IReceiptForAdmin> = [];
 	if (receipts && receipts.length) {
 		for (let receipt = 0; receipt < receipts.length; receipt++) {
@@ -28,7 +28,7 @@ export const findReceipts = (receipts: ObjectId[]) => {
 	return receiptInfoArray;
 };
 
-export const findPayments = (payments: ObjectId[]) => {
+export const formatPaymentResponse = (payments: ObjectId[]) => {
 	const paymentInfoArray: Array<IPaymentForAdmin> = [];
 	if (payments && payments.length) {
 		for (let payment = 0; payment < payments.length; payment++) {
@@ -67,16 +67,16 @@ export const findPayments = (payments: ObjectId[]) => {
 	return paymentInfoArray;
 };
 
-export const findTenants = (tenants: ObjectId[]) => {
+export const formatTenantResponse = (tenants: ObjectId[]) => {
 	const ITenantInfoForAdminArray: Array<ITenantInfoForAdmin> = [];
 	if (tenants && tenants.length) {
 		for (let tenant = 0; tenant < tenants.length; tenant++) {
 			const { receipts, payments, _id, userId, joinDate, rentDueDate, securityAmount } = (tenants[
 				tenant
 			] as unknown) as ITenant;
-			const receiptInfoArray: Array<IReceiptForAdmin> = findReceipts(receipts);
+			const receiptInfoArray: Array<IReceiptForAdmin> = formatReceiptResponse(receipts);
 
-			const paymentInfoArray: Array<IPaymentForAdmin> = findPayments(payments);
+			const paymentInfoArray: Array<IPaymentForAdmin> = formatPaymentResponse(payments);
 
 			const { name, email, phoneNumber } = (userId as unknown) as IUser;
 
@@ -96,19 +96,19 @@ export const findTenants = (tenants: ObjectId[]) => {
 	return ITenantInfoForAdminArray;
 };
 
-export const findRooms = (rooms: ObjectId[]) => {
+export const formatRoomResponse = (rooms: ObjectId[]) => {
 	const IRoomInfoForAdminArray: Array<IRoomInfoForAdmin> = [];
 	if (rooms && rooms.length) {
 		for (let room = 0; room < rooms.length; room++) {
 			const { tenants, _id, rent, type, floor, roomNo } = (rooms[room] as unknown) as IRooms;
-			const ITenantInfoForAdminArray: Array<ITenantInfoForAdmin> = findTenants(tenants);
+			const ITenantInfoForAdminArray: Array<ITenantInfoForAdmin> = formatTenantResponse(tenants);
 			IRoomInfoForAdminArray.push({ _id, rent, type, floor, roomNo, tenants: ITenantInfoForAdminArray });
 		}
 	}
 	return IRoomInfoForAdminArray;
 };
 
-export const findBuildings = (buildings: IBuilding[]): IBuildingInfoForAdmin[] => {
+export const formatBuildingResponse = (buildings: IBuilding[]): IBuildingInfoForAdmin[] => {
 	const IBuildingInfoForAdminArray: Array<IBuildingInfoForAdmin> = [];
 	if (buildings && buildings.length) {
 		for (let building = 0; building < buildings.length; building++) {
@@ -119,7 +119,7 @@ export const findBuildings = (buildings: IBuilding[]): IBuildingInfoForAdmin[] =
 				const { name, email, phoneNumber } = (userId as unknown) as IUser;
 				maintainerDetails = { _id, joinDate, name, email, phoneNumber };
 			}
-			const IRoomInfoForAdminArray: Array<IRoomInfoForAdmin> = findRooms(rooms);
+			const IRoomInfoForAdminArray: Array<IRoomInfoForAdmin> = formatRoomResponse(rooms);
 
 			IBuildingInfoForAdminArray.push({
 				_id,
@@ -133,7 +133,7 @@ export const findBuildings = (buildings: IBuilding[]): IBuildingInfoForAdmin[] =
 	return IBuildingInfoForAdminArray;
 };
 
-export const findAllOwner = (propertyDoc: IProperty): IOwnerForAdmin => {
+export const formatOwnerResponse = (propertyDoc: IProperty): IOwnerForAdmin => {
 	let ownerInfoObject: IOwnerForAdmin = {};
 	const { _id, ownerId, ownerInfo, buildings } = propertyDoc;
 	const { _id: ownerUserId, name, email, phoneNumber } = (ownerId as unknown) as IUser;
@@ -143,7 +143,7 @@ export const findAllOwner = (propertyDoc: IProperty): IOwnerForAdmin => {
 		const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
 		ownerDetail = { ...ownerDetail, accountName, accountNumber, ifsc, bankName, beneficiaryName };
 	}
-	const IBuildingInfoForAdminArray: Array<IBuildingInfoForAdmin> = findBuildings(buildings);
+	const IBuildingInfoForAdminArray: Array<IBuildingInfoForAdmin> = formatBuildingResponse(buildings);
 
 	ownerInfoObject = { _id, ownerInfo: ownerDetail, buildings: IBuildingInfoForAdminArray };
 	return ownerInfoObject;

@@ -3,7 +3,7 @@ import property from '../../models/property/property';
 import User from '../../models/user/User';
 
 import { IOwnerForAdmin } from './adminType';
-import { findAllOwner } from './adminUtil';
+import { formatOwnerResponse } from './adminUtil';
 
 export const getAllOwner = async (req: Request, res: Response) => {
 	if (req.isAuth) {
@@ -31,7 +31,7 @@ export const getAllOwner = async (req: Request, res: Response) => {
 						},
 					});
 				if (propertyDoc) {
-					allOwnerInfo.push(findAllOwner(propertyDoc));
+					allOwnerInfo.push(formatOwnerResponse(propertyDoc));
 				} else {
 					allOwnerInfo.push({ _id, name, email, phoneNumber });
 				}

@@ -39,7 +39,7 @@ export interface IMaintainerInfoForAdmin {
 	name?: string;
 	email?: string;
 	phoneNumber?: string;
-	joinDate?: string;
+	joinDate?: Date;
 }
 
 export interface IRoomInfoForAdmin {

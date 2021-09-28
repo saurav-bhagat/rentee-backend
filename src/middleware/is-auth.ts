@@ -20,7 +20,7 @@ export default (req: Request, res: Response, next: NextFunction) => {
 	try {
 		decodedToken = <IUser>jwt.verify(token, process.env.JWT_ACCESS_SECRET as string);
 		console.log('Decoded token is: ', decodedToken);
-	} catch (err) {
+	} catch (err: any) {
 		console.log(err);
 		req.isAuth = false;
 		req.tokenError = err.message;

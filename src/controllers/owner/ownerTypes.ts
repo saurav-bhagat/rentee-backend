@@ -55,7 +55,7 @@ export interface IDashboardMaintainer {
 	name?: string;
 	email?: string;
 	phoneNumber?: string;
-	joinDate?: string;
+	joinDate?: Date;
 }
 
 export interface IBuildingObjectOwnerProperty {

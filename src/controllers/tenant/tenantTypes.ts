@@ -19,4 +19,5 @@ export interface TenantObj {
 	ownerPhoneNumber?: string;
 	userType?: string;
 	receipts?: Array<ObjectId>;
+	payments?: Array<ObjectId>;
 }

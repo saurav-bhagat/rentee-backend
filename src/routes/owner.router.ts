@@ -14,6 +14,7 @@ import {
 	removeRoom,
 	ownerAddBankAccountInfo,
 } from '../controllers/owner';
+import { payWithCashAndOtherMeans } from '../payment/payWithCash';
 
 const router: Router = Router();
 
@@ -29,6 +30,8 @@ router.post('/add-property', addOwnerProperty);
 router.post('/register-tenant', tenantRegistration);
 
 router.post('/dashboard', getAllOwnerBuildings);
+
+router.post('/pay-with-cash', payWithCashAndOtherMeans);
 
 router.put('/update-building', updateOwnerBuilding);
 

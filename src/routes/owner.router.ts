@@ -35,7 +35,7 @@ router.post('/pay-with-cash', payWithCashAndOtherMeans);
 
 router.put('/update-building', updateOwnerBuilding);
 
-router.put('/update-rooms-details', updateRoomDetails);
+router.put('/update-room-details', updateRoomDetails);
 
 router.put('/add-buildings', addBuildings);
 router.put('/add-rooms', addRooms);

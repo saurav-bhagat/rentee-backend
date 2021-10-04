@@ -78,9 +78,9 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				return res.status(200).json({ ownerDashboardResult });
 			} else {
 				const { _id, name, email, phoneNumber, userType } = owner;
-				const ownerInfo = { ownerId: _id, email, name, phoneNumber, userType, buildings: [] };
+				const ownerDashboardResult = { ownerId: _id, email, name, phoneNumber, userType, buildings: [] };
 				// TODO:  send userID for the tenants
-				return res.status(200).json({ ownerInfo });
+				return res.status(200).json({ ownerDashboardResult });
 			}
 		} else {
 			return res.status(400).json({ err: 'Invalid Owner' });

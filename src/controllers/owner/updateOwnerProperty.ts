@@ -54,8 +54,7 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 		} else {
 			return res.status(400).json({ err: 'Updating field mandatory!' });
 		}
-	}
-	{
+	} else {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };
@@ -104,8 +103,7 @@ export const addRooms = (req: Request, res: Response) => {
 			.catch((err) => {
 				return res.status(400).json({ err });
 			});
-	}
-	{
+	} else {
 		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };

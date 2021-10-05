@@ -35,7 +35,7 @@ export const updateOwnerBuilding = async (req: Request, res: Response) => {
 
 export const updateRoomDetails = async (req: Request, res: Response) => {
 	if (req.isAuth) {
-		const { roomId, roomType: type, roomNo, floor, rent } = req.body;
+		const { roomId, roomType: type, roomNo, floor, rent, roomSize } = req.body;
 
 		if (!roomId || !verifyObjectId([roomId])) {
 			return res.status(403).json({ err: 'Room Details Missing' });
@@ -46,7 +46,7 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 
 		if (floor) data['floor'] = floor;
 		if (rent) data['rent'] = rent;
-
+		if (roomSize) data['roomSize'] = roomSize;
 		if (!(Object.keys(data).length === 0)) {
 			const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
 			if (!result) return res.status(400).json({ err: 'Invalid room detail' });

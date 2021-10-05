@@ -14,6 +14,7 @@ import {
 	removeRoom,
 	ownerAddBankAccountInfo,
 } from '../controllers/owner';
+import { updateTenantInfo } from '../controllers/tenant';
 import { payWithCashAndOtherMeans } from '../payment/payWithCash';
 
 const router: Router = Router();
@@ -24,23 +25,21 @@ router.get('/ping', (req, res) => {
 });
 
 router.post('/add-bank-info', ownerAddBankAccountInfo);
-
 router.post('/add-property', addOwnerProperty);
 
 router.post('/register-tenant', tenantRegistration);
-
 router.post('/dashboard', getAllOwnerBuildings);
 
 router.post('/pay-with-cash', payWithCashAndOtherMeans);
 
 router.put('/update-building', updateOwnerBuilding);
-
 router.put('/update-room-details', updateRoomDetails);
 
 router.put('/add-buildings', addBuildings);
 router.put('/add-rooms', addRooms);
 
 router.put('/add-maintainer', addMaintainer);
+router.put('/update-tenant-info', updateTenantInfo);
 
 // TODO: For all remove, check if required params are passed in the owner dashboard or not
 router.delete('/remove-tenant', removeTenant);

@@ -7,6 +7,7 @@ const roomSchema = new Schema(
 		type: { type: String, required: [true, 'Please enter room type'] },
 		floor: { type: String, required: [true, 'Please enter floor number'] },
 		roomNo: { type: String, required: [true, 'Please enter room number'] },
+		roomSize: { type: String, required: [true, 'Please enter room size'] },
 		isEmpty: { type: Boolean },
 		tenants: [{ type: Schema.Types.ObjectId, ref: 'tenant' }],
 	},

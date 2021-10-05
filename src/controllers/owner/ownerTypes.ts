@@ -37,6 +37,7 @@ export interface IDashboardRoom {
 	type: string;
 	floor: string;
 	roomNo: number;
+	roomSize: string;
 }
 
 export interface IDashboardTenant {

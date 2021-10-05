@@ -311,7 +311,7 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 };
 
 export const findRoom = (room: IRooms) => {
-	const { _id, rent, type, floor, roomNo, tenants } = room;
+	const { _id, rent, type, floor, roomNo, tenants, roomSize } = room;
 	const tenantsArray: Array<IDashboardTenant> = [];
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
@@ -343,7 +343,7 @@ export const findRoom = (room: IRooms) => {
 			tenantsArray.push(tempTenat);
 		}
 	}
-	const roomDetails: IDashboardRoom = { _id, rent, type, floor, roomNo, tenants: tenantsArray };
+	const roomDetails: IDashboardRoom = { _id, rent, type, floor, roomNo, roomSize, tenants: tenantsArray };
 	return roomDetails;
 };
 

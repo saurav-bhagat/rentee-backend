@@ -20,4 +20,5 @@ export interface TenantObj {
 	userType?: string;
 	receipts?: Array<ObjectId>;
 	payments?: Array<ObjectId>;
+	roomSize?: string;
 }

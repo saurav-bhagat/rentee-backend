@@ -7,6 +7,7 @@ export interface IRooms extends Document {
 	floor: string;
 	roomNo: number;
 	isEmpty: boolean;
+	roomSize: string;
 	tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
 }
 

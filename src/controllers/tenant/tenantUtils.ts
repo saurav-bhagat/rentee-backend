@@ -50,7 +50,7 @@ export const findTenant = async (userDocument: IUser): Promise<any> => {
 				email: tenantEmail,
 				phoneNumber: tenantPhoneNumber,
 			} = (userObject as unknown) as IUser;
-			const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
+			const { rent, type: roomType, floor, roomNo: roomNumber, roomSize } = (roomObject as unknown) as IRooms;
 
 			// Finding building with ownerId and buildId
 			const building = await Property.aggregate([
@@ -87,6 +87,7 @@ export const findTenant = async (userDocument: IUser): Promise<any> => {
 				ownerPhoneNumber,
 				receipts: tenantDocument.receipts,
 				payments: tenantDocument.payments,
+				roomSize,
 			};
 			return new Promise((resolve, reject) => {
 				if (result == null) {

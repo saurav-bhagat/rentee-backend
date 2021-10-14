@@ -138,7 +138,7 @@ export const paytmGenerateSignatueUtil = (
 					const parseResponse = JSON.parse(response);
 					const txn = parseResponse.body.txnToken;
 					const result = {
-						url: `${process.env.PAYTM_SHOW_PAYMENT_PAGE}&orderId=${orderId}`,
+						url: `${process.env.PAYTM_SHOW_PAYMENT_PAGE}`,
 						mid: `${process.env.MERCHANT_ID}`,
 						orderId,
 						txn,

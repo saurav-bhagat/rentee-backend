@@ -75,7 +75,14 @@ export const findOwner = async (
 
 	let ownerDashbhoardResult: OwnerDashboardDetail = {};
 	if (ownerInfo) {
-		const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
+		const {
+			accountName,
+			accountNumber,
+			ifsc,
+			bankName,
+			beneficiaryName,
+			vendorId,
+		} = (ownerInfo as unknown) as IOwner;
 
 		ownerDashbhoardResult = {
 			_id,
@@ -87,6 +94,7 @@ export const findOwner = async (
 			ifsc,
 			bankName,
 			beneficiaryName,
+			vendorId,
 		};
 		return ownerDashbhoardResult;
 	}
@@ -373,4 +381,14 @@ export const findBuilding = (building: IBuilding) => {
 	}
 	buildingDetail = { _id, name, address, rooms };
 	return buildingDetail;
+};
+
+export const validateIfsc = (ifsc: any) => {
+	const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+	return regex.test(ifsc);
+};
+
+export const validateBankAccountNumber = (accountNumber: any) => {
+	const regex = /[0-9]{9,18}/;
+	return regex.test(accountNumber);
 };

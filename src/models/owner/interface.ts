@@ -7,4 +7,6 @@ export interface IOwner extends Document {
 	ifsc: string;
 	bankName: string;
 	beneficiaryName: string;
+	vendorId: string;
+	ownerUserId: string;
 }

@@ -1,16 +1,7 @@
 import { Schema, model } from 'mongoose';
 import uniqueValidator from 'mongoose-unique-validator';
+import { validateBankAccountNumber, validateIfsc } from '../../controllers/owner';
 import { IOwner } from './interface';
-
-const validateIfsc = (ifsc: any) => {
-	const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
-	return regex.test(ifsc);
-};
-
-const validateBankAccountNumber = (accountNumber: any) => {
-	const regex = /[0-9]{9,18}/;
-	return regex.test(accountNumber);
-};
 
 const ownerInfoSchema = new Schema(
 	{
@@ -34,6 +25,11 @@ const ownerInfoSchema = new Schema(
 			required: [true, 'Please enter bank name'],
 		},
 		beneficiaryName: String,
+		vendorId: String,
+		ownerUserId: {
+			type: String,
+			required: [true, 'Please enter owner User id'],
+		},
 	},
 	{ timestamps: true }
 );

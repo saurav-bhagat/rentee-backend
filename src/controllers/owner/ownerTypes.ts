@@ -20,6 +20,7 @@ export interface OwnerDashboardDetail {
 	ifsc?: string;
 	bankName?: string;
 	beneficiaryName?: string;
+	vendorId?: string;
 }
 
 export interface IDashboardBuild {

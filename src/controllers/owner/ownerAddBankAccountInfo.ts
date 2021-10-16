@@ -12,7 +12,14 @@ export const ownerAddBankAccountInfo = async (req: Request, res: Response) => {
 		}
 
 		try {
-			const ownerInfoDoc = await Owner.create({ accountName, accountNumber, ifsc, bankName, beneficiaryName });
+			const ownerInfoDoc = await Owner.create({
+				accountName,
+				accountNumber,
+				ifsc,
+				bankName,
+				beneficiaryName,
+				ownerUserId: ownerId,
+			});
 
 			if (!(await Property.findOne({ ownerId }))) {
 				await Property.create({ ownerId, ownerInfo: ownerInfoDoc._id });

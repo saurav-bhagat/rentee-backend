@@ -13,7 +13,9 @@ import {
 	removeBuilding,
 	removeRoom,
 	ownerAddBankAccountInfo,
+	updateOwnerBankDetails,
 } from '../controllers/owner';
+
 import { updateTenantInfo } from '../controllers/tenant';
 import { payWithCashAndOtherMeans } from '../payment/payWithCash';
 
@@ -40,6 +42,8 @@ router.put('/add-rooms', addRooms);
 
 router.put('/add-maintainer', addMaintainer);
 router.put('/update-tenant-info', updateTenantInfo);
+
+router.put('/update-owner-bank-details', updateOwnerBankDetails);
 
 // TODO: For all remove, check if required params are passed in the owner dashboard or not
 router.delete('/remove-tenant', removeTenant);

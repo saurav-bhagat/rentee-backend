@@ -56,6 +56,7 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 						ifsc,
 						bankName,
 						beneficiaryName,
+						vendorId,
 					} = (ownerInfo as unknown) as IOwner;
 
 					ownerDashboardResult = {
@@ -67,6 +68,7 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 						ifsc,
 						bankName,
 						beneficiaryName,
+						vendorId,
 					};
 					return res.status(200).json({ ownerDashboardResult });
 				}

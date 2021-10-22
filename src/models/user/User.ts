@@ -41,6 +41,9 @@ const userSchema = new Schema(
 		refreshToken: {
 			type: String,
 		},
+		expoPushToken: {
+			type: String,
+		},
 	},
 	{ timestamps: true }
 );

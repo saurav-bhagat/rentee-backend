@@ -3,6 +3,7 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
+import { Expo } from 'expo-server-sdk';
 
 // import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
@@ -22,6 +23,7 @@ import { IMaintainer } from '../models/maintainer/interface';
 import { findMaintainer } from '../controllers/maintainer';
 import { findOwner } from '../controllers/owner';
 import { BasicUser, OwnerDashboardDetail } from './owner/ownerTypes';
+import sendNotifications from '../utils/sendNotifications';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -263,6 +265,7 @@ export class AuthController {
 		const { accessToken, refreshToken } = await this.generateTokensForUser(userDocument);
 		return new Promise((resolve) => {
 			resolve({
+				userDocument,
 				userDetails,
 				accessToken,
 				refreshToken,
@@ -282,6 +285,13 @@ export class AuthController {
 		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {
+					let title = 'Otp submitted successfully.';
+					let body = 'Yeah, you logged in.';
+					let userId = userDocument.userDocument_id;
+					let token = userDocument.userDocument.expoPushToken;
+
+					sendNotifications(title, body, userId, token);
+					console.log('notifications sent');
 					return res.status(200).json({ userDocument });
 				})
 				.catch((err) => {
@@ -294,11 +304,12 @@ export class AuthController {
 	};
 
 	updateUserBasicInfoUtil = async (userObject: any) => {
-		const { name, email, _id, phoneNumber } = userObject;
+		const { name, email, _id, phoneNumber, expoPushToken } = userObject;
 		const data: any = {};
 		if (name) data['name'] = name;
 		if (email) data['email'] = email;
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
+		if (expoPushToken) data['expoPushToken'] = expoPushToken;
 		if (!(Object.keys(data).length == 0)) {
 			const result = await User.findOneAndUpdate({ _id }, data, {
 				new: true,
@@ -316,23 +327,27 @@ export class AuthController {
 
 	updateUserBasicInfo = (req: Request, res: Response) => {
 		if (req.isAuth) {
-			const { _id, name, email, phoneNumber } = req.body;
+			const { _id, name, email, phoneNumber, expoPushToken } = req.body;
 
 			if (!_id || !verifyObjectId([_id])) {
-				res.status(403).json({ err: 'Invalid user Details' });
+				return res.status(403).json({ err: 'Invalid user Details' });
 			}
 
 			if (email && !validator.isEmail(email)) {
-				res.status(400).json({ err: 'email is not valid!' });
+				return res.status(400).json({ err: 'email is not valid!' });
 			}
 			if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-				res.status(400).json({ err: 'Phone number is not valid!' });
+				return res.status(400).json({ err: 'Phone number is not valid!' });
 			}
-			const userObject = { _id, name, email, phoneNumber };
+
+			if (expoPushToken && !Expo.isExpoPushToken(expoPushToken)) {
+				return res.status(400).json({ err: 'Invalid expo token!' });
+			}
+			const userObject = { _id, name, email, phoneNumber, expoPushToken };
 			this.updateUserBasicInfoUtil(userObject)
 				.then((data) => {
-					const { _id, name, email, phoneNumber, userType } = data;
-					const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+					const { _id, name, email, phoneNumber, userType, expoPushToken } = data;
+					const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType, expoPushToken };
 					res.status(200).json({ updatedUserInfo });
 				})
 				.catch((err) => {

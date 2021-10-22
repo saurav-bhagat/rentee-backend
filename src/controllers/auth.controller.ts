@@ -285,10 +285,10 @@ export class AuthController {
 		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {
-					let title = 'Otp submitted successfully.';
-					let body = 'Yeah, you logged in.';
-					let userId = userDocument.userDocument_id;
-					let token = userDocument.userDocument.expoPushToken;
+					const title = 'Otp submitted successfully.';
+					const body = 'Yeah, you logged in.';
+					const userId = userDocument.userDocument_id;
+					const token = userDocument.userDocument.expoPushToken;
 
 					sendNotifications(title, body, userId, token);
 					console.log('notifications sent');

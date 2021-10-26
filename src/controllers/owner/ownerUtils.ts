@@ -111,7 +111,7 @@ export const findOwner = async (
 // owner add tenant to tenant array
 export const tenantRegistration = async (req: Request, res: Response): Promise<Response<void>> => {
 	if (req.isAuth) {
-		const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId } = req.body;
+		const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId, rent } = req.body;
 
 		const tenantDetails = {
 			name,
@@ -161,6 +161,10 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 			const roomDocument = await Rooms.findOne({ _id: roomId });
 
 			if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
+				if (!roomDocument.isMultipleTenant && roomDocument.tenants.length > 1) {
+					return res.status(400).json({ err: 'You cant add tenant in single room' });
+				}
+
 				// Creating a tenant User
 				const userDoc = await User.create(userInfo);
 				const userId = userDoc._id;
@@ -169,21 +173,41 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const nextMonthDate = setDate(addMonths(new Date(), 1), 5);
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
+				let tenantInfo: any;
 
-				const tenantInfo = {
-					userId,
-					joinDate,
-					rentDueDate,
-					securityAmount,
-					roomId,
-					buildId,
-					ownerId,
-				};
+				if (roomDocument.isMultipleTenant) {
+					if (!rent) {
+						return res.status(400).json({ err: 'Missing fields' });
+					}
+					tenantInfo = {
+						userId,
+						joinDate,
+						rentDueDate,
+						securityAmount,
+						roomId,
+						buildId,
+						ownerId,
+						rent,
+					};
+
+					roomDocument.rent += rent;
+				} else {
+					tenantInfo = {
+						userId,
+						joinDate,
+						rentDueDate,
+						securityAmount,
+						roomId,
+						buildId,
+						ownerId,
+					};
+				}
 
 				const tenantDoc = await Tenant.create(tenantInfo);
 				const tenantId = tenantDoc._id;
 
 				roomDocument.tenants.push(tenantId);
+
 				await roomDocument.save();
 				return res.status(200).json({ password, msg: 'Tenant added successfully' });
 			} else {
@@ -319,12 +343,12 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 };
 
 export const findRoom = (room: IRooms) => {
-	const { _id, rent, type, floor, roomNo, tenants, roomSize } = room;
+	const { _id, rent, type, floor, roomNo, tenants, roomSize, isMultipleTenant } = room;
 	const tenantsArray: Array<IDashboardTenant> = [];
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const { userId, joinDate, rentDueDate, securityAmount, payments } = (tenant as unknown) as ITenant;
+			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = (tenant as unknown) as ITenant;
 			const tenantRef = (userId as unknown) as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
 			const paymentDetails: Array<IPaymentDetail> = [];
@@ -348,10 +372,22 @@ export const findRoom = (room: IRooms) => {
 				securityAmount,
 				paymentDetails,
 			};
+			if (isMultipleTenant) {
+				tempTenat['rent'] = rent;
+			}
 			tenantsArray.push(tempTenat);
 		}
 	}
-	const roomDetails: IDashboardRoom = { _id, rent, type, floor, roomNo, roomSize, tenants: tenantsArray };
+	const roomDetails: IDashboardRoom = {
+		_id,
+		rent,
+		type,
+		floor,
+		roomNo,
+		roomSize,
+		tenants: tenantsArray,
+		isMultipleTenant,
+	};
 	return roomDetails;
 };
 

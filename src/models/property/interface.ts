@@ -9,6 +9,7 @@ export interface IRooms extends Document {
 	isEmpty: boolean;
 	roomSize: string;
 	tenants: mongoose.Types.Array<Schema.Types.ObjectId>;
+	isMultipleTenant: boolean;
 }
 
 export interface IBuilding extends Document {

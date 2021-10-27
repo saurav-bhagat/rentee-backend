@@ -161,8 +161,14 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 			const roomDocument = await Rooms.findOne({ _id: roomId });
 
 			if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
-				if (!roomDocument.isMultipleTenant && roomDocument.tenants.length > 1) {
+				if (!roomDocument.isMultipleTenant && roomDocument.tenants.length >= 1) {
 					return res.status(400).json({ err: 'You cant add tenant in single room' });
+				}
+
+				if (roomDocument.isMultipleTenant) {
+					if (!rent) {
+						return res.status(400).json({ err: 'Missing fields' });
+					}
 				}
 
 				// Creating a tenant User
@@ -176,9 +182,6 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				let tenantInfo: any;
 
 				if (roomDocument.isMultipleTenant) {
-					if (!rent) {
-						return res.status(400).json({ err: 'Missing fields' });
-					}
 					tenantInfo = {
 						userId,
 						joinDate,
@@ -190,7 +193,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 						rent,
 					};
 
-					roomDocument.rent += rent;
+					roomDocument.rent += parseInt(rent);
 				} else {
 					tenantInfo = {
 						userId,

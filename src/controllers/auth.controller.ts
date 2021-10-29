@@ -288,10 +288,12 @@ export class AuthController {
 					const title = 'Otp submitted successfully.';
 					const body = 'Yeah, you logged in.';
 					const userId = userDocument.userDocument_id;
-					const token = userDocument.userDocument.expoPushToken;
-
-					sendNotifications(title, body, userId, token);
-					console.log('notifications sent');
+					if (userDocument.userDocument?.expoPushToken) {
+						const token = userDocument.userDocument.expoPushToken;
+						sendNotifications(title, body, userId, token)
+							.then((response) => console.log(response))
+							.catch((error) => console.error(error));
+					}
 					return res.status(200).json({ userDocument });
 				})
 				.catch((err) => {

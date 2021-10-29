@@ -39,6 +39,7 @@ export interface IDashboardRoom {
 	floor: string;
 	roomNo: number;
 	roomSize: string;
+	isMultipleTenant: boolean;
 }
 
 export interface IDashboardTenant {
@@ -50,6 +51,7 @@ export interface IDashboardTenant {
 	rentDueDate: Date;
 	securityAmount: number;
 	paymentDetails?: Array<IPaymentDetail>;
+	rent?: number;
 }
 
 export interface IDashboardMaintainer {

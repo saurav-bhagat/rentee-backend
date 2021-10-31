@@ -47,7 +47,7 @@ export const updateRoomDetails = async (req: Request, res: Response) => {
 		if (floor) data['floor'] = floor;
 		if (rent) data['rent'] = rent;
 		if (roomSize) data['roomSize'] = roomSize;
-		if (isMultipleTenant) data['isMultipleTenant'] = isMultipleTenant;
+		if (isMultipleTenant === true || isMultipleTenant === false) data['isMultipleTenant'] = isMultipleTenant;
 		if (!(Object.keys(data).length === 0)) {
 			const result = await Rooms.findOneAndUpdate({ _id: roomId }, data, { new: true });
 			if (!result) return res.status(400).json({ err: 'Invalid room detail' });

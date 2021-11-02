@@ -292,7 +292,7 @@ export class AuthController {
 						const token = userDocument.userDocument.expoPushToken;
 						sendNotifications(title, body, userId, token)
 							.then((response) => console.log(response))
-							.catch((error) => console.error(error));
+							.catch((error) => console.log(error));
 					}
 					return res.status(200).json({ userDocument });
 				})

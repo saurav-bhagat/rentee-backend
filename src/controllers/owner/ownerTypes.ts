@@ -8,6 +8,7 @@ export interface BasicUser {
 	email?: string;
 	phoneNumber?: string;
 	userType?: string;
+	expoPushToken?: string;
 }
 
 export interface OwnerDashboardDetail {

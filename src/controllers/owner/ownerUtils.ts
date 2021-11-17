@@ -75,14 +75,8 @@ export const findOwner = async (
 
 	let ownerDashbhoardResult: OwnerDashboardDetail = {};
 	if (ownerInfo) {
-		const {
-			accountName,
-			accountNumber,
-			ifsc,
-			bankName,
-			beneficiaryName,
-			vendorId,
-		} = (ownerInfo as unknown) as IOwner;
+		const { accountName, accountNumber, ifsc, bankName, beneficiaryName, vendorId } =
+			ownerInfo as unknown as IOwner;
 
 		ownerDashbhoardResult = {
 			_id,
@@ -351,17 +345,17 @@ export const findRoom = (room: IRooms) => {
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = (tenant as unknown) as ITenant;
-			const tenantRef = (userId as unknown) as IUser;
+			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = tenant as unknown as ITenant;
+			const tenantRef = userId as unknown as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
 			const paymentDetails: Array<IPaymentDetail> = [];
 			if (payments && payments.length) {
 				for (let paymentIndex = 0; paymentIndex < payments.length; paymentIndex++) {
-					const payment = (payments[paymentIndex] as unknown) as IPayment;
+					const payment = payments[paymentIndex] as unknown as IPayment;
 					const { respCode } = payment;
 					if (respCode === '01') {
-						const { txnAmount, txnDate, paymentMode } = payment;
-						paymentDetails.push({ txnAmount, txnDate, paymentMode });
+						const { txnAmount, txnDate, paymentMode, _id } = payment;
+						paymentDetails.push({ txnAmount, txnDate, paymentMode, _id });
 					}
 				}
 			}
@@ -396,7 +390,7 @@ export const findRoom = (room: IRooms) => {
 
 export const findMaintainer = (maintainer: IMaintainer) => {
 	const { joinDate, userId } = maintainer;
-	const maintainerUser = (userId as unknown) as IUser;
+	const maintainerUser = userId as unknown as IUser;
 	const { _id, name, email, phoneNumber } = maintainerUser;
 	const maintainerDetail: IDashboardMaintainer = { _id, name, email, phoneNumber, joinDate };
 	return maintainerDetail;
@@ -408,13 +402,11 @@ export const findBuilding = (building: IBuilding) => {
 	let buildingDetail: IDashboardBuild;
 	const rooms: Array<IDashboardRoom> = [];
 	for (let j = 0; j < build.rooms.length; j++) {
-		const room: IDashboardRoom = findRoom((building.rooms[j] as unknown) as IRooms);
+		const room: IDashboardRoom = findRoom(building.rooms[j] as unknown as IRooms);
 		rooms.push(room);
 	}
 	if (building.maintainerId) {
-		const maintainerDetail: IDashboardMaintainer = findMaintainer(
-			(building.maintainerId as unknown) as IMaintainer
-		);
+		const maintainerDetail: IDashboardMaintainer = findMaintainer(building.maintainerId as unknown as IMaintainer);
 		buildingDetail = { _id, name, address, rooms, maintainer: maintainerDetail };
 		return buildingDetail;
 	}

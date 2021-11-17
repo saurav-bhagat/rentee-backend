@@ -50,14 +50,8 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 
 				let ownerDashboardResult: OwnerDashboardDetail = {};
 				if (ownerInfo) {
-					const {
-						accountName,
-						accountNumber,
-						ifsc,
-						bankName,
-						beneficiaryName,
-						vendorId,
-					} = (ownerInfo as unknown) as IOwner;
+					const { accountName, accountNumber, ifsc, bankName, beneficiaryName, vendorId } =
+						ownerInfo as unknown as IOwner;
 
 					ownerDashboardResult = {
 						_id,

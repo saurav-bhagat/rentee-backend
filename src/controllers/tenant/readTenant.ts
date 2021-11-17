@@ -78,8 +78,8 @@ export const tenantInfo = async (req: Request, res: Response) => {
 			email: ownerEmail,
 			phoneNumber: ownerPhoneNumber,
 			_id,
-		} = (ownerObject as unknown) as IUser;
-		const { rent, type: roomType, floor, roomNo: roomNumber } = (roomObject as unknown) as IRooms;
+		} = ownerObject as unknown as IUser;
+		const { rent, type: roomType, floor, roomNo: roomNumber } = roomObject as unknown as IRooms;
 
 		const propertyDocument = await Property.findOne({ ownerId: _id });
 

@@ -21,7 +21,7 @@ export const formatReceiptResponse = (receipts: ObjectId[]) => {
 	const receiptInfoArray: Array<IReceiptForAdmin> = [];
 	if (receipts && receipts.length) {
 		for (let receipt = 0; receipt < receipts.length; receipt++) {
-			const { _id, amount, month, mode } = (receipts[receipt] as unknown) as IReceipt;
+			const { _id, amount, month, mode } = receipts[receipt] as unknown as IReceipt;
 			receiptInfoArray.push({ _id, amount, month, mode });
 		}
 	}
@@ -46,7 +46,7 @@ export const formatPaymentResponse = (payments: ObjectId[]) => {
 				txnDate,
 				txnId,
 				paymentMode,
-			} = (payments[payment] as unknown) as IPayment;
+			} = payments[payment] as unknown as IPayment;
 			paymentInfoArray.push({
 				_id,
 				currency,
@@ -71,14 +71,14 @@ export const formatTenantResponse = (tenants: ObjectId[]) => {
 	const ITenantInfoForAdminArray: Array<ITenantInfoForAdmin> = [];
 	if (tenants && tenants.length) {
 		for (let tenant = 0; tenant < tenants.length; tenant++) {
-			const { receipts, payments, _id, userId, joinDate, rentDueDate, securityAmount } = (tenants[
+			const { receipts, payments, _id, userId, joinDate, rentDueDate, securityAmount } = tenants[
 				tenant
-			] as unknown) as ITenant;
+			] as unknown as ITenant;
 			const receiptInfoArray: Array<IReceiptForAdmin> = formatReceiptResponse(receipts);
 
 			const paymentInfoArray: Array<IPaymentForAdmin> = formatPaymentResponse(payments);
 
-			const { name, email, phoneNumber } = (userId as unknown) as IUser;
+			const { name, email, phoneNumber } = userId as unknown as IUser;
 
 			ITenantInfoForAdminArray.push({
 				_id,
@@ -100,7 +100,7 @@ export const formatRoomResponse = (rooms: ObjectId[]) => {
 	const IRoomInfoForAdminArray: Array<IRoomInfoForAdmin> = [];
 	if (rooms && rooms.length) {
 		for (let room = 0; room < rooms.length; room++) {
-			const { tenants, _id, rent, type, floor, roomNo } = (rooms[room] as unknown) as IRooms;
+			const { tenants, _id, rent, type, floor, roomNo } = rooms[room] as unknown as IRooms;
 			const ITenantInfoForAdminArray: Array<ITenantInfoForAdmin> = formatTenantResponse(tenants);
 			IRoomInfoForAdminArray.push({ _id, rent, type, floor, roomNo, tenants: ITenantInfoForAdminArray });
 		}
@@ -115,8 +115,8 @@ export const formatBuildingResponse = (buildings: IBuilding[]): IBuildingInfoFor
 			const { _id, name, address, maintainerId, rooms } = buildings[building];
 			let maintainerDetails: IMaintainerInfoForAdmin = {};
 			if (maintainerId) {
-				const { _id, userId, joinDate } = (maintainerId as unknown) as IMaintainer;
-				const { name, email, phoneNumber } = (userId as unknown) as IUser;
+				const { _id, userId, joinDate } = maintainerId as unknown as IMaintainer;
+				const { name, email, phoneNumber } = userId as unknown as IUser;
 				maintainerDetails = { _id, joinDate, name, email, phoneNumber };
 			}
 			const IRoomInfoForAdminArray: Array<IRoomInfoForAdmin> = formatRoomResponse(rooms);
@@ -136,11 +136,11 @@ export const formatBuildingResponse = (buildings: IBuilding[]): IBuildingInfoFor
 export const formatOwnerResponse = (propertyDoc: IProperty): IOwnerForAdmin => {
 	let ownerInfoObject: IOwnerForAdmin = {};
 	const { _id, ownerId, ownerInfo, buildings } = propertyDoc;
-	const { _id: ownerUserId, name, email, phoneNumber } = (ownerId as unknown) as IUser;
+	const { _id: ownerUserId, name, email, phoneNumber } = ownerId as unknown as IUser;
 
 	let ownerDetail: IOwnerInfoForAdmin = { _id: ownerUserId, name, email, phoneNumber };
 	if (ownerInfo) {
-		const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = (ownerInfo as unknown) as IOwner;
+		const { accountName, accountNumber, ifsc, bankName, beneficiaryName } = ownerInfo as unknown as IOwner;
 		ownerDetail = { ...ownerDetail, accountName, accountNumber, ifsc, bankName, beneficiaryName };
 	}
 	const IBuildingInfoForAdminArray: Array<IBuildingInfoForAdmin> = formatBuildingResponse(buildings);

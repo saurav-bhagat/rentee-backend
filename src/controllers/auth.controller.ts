@@ -225,7 +225,7 @@ export class AuthController {
 	};
 
 	registerUser = async (phoneNumber: string): Promise<any> => {
-		const user = await User.collection.insertOne({
+		const user: any = await User.collection.insertOne({
 			_id: new mongoose.Types.ObjectId(),
 			phoneNumber,
 			userType: 'Owner',

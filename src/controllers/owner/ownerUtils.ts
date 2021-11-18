@@ -360,8 +360,8 @@ export const findRoom = (room: IRooms) => {
 					const payment = (payments[paymentIndex] as unknown) as IPayment;
 					const { respCode } = payment;
 					if (respCode === '01') {
-						const { txnAmount, txnDate, paymentMode } = payment;
-						paymentDetails.push({ txnAmount, txnDate, paymentMode });
+						const { txnAmount, txnDate, paymentMode, _id } = payment;
+						paymentDetails.push({ txnAmount, txnDate, paymentMode, _id });
 					}
 				}
 			}

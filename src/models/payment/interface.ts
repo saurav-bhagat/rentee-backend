@@ -17,6 +17,7 @@ export interface IPayment extends Document {
 }
 
 export interface IPaymentDetail {
+	_id: Schema.Types.ObjectId;
 	txnAmount: string;
 	txnDate: Date;
 	paymentMode: string;

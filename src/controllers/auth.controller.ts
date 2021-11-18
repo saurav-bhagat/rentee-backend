@@ -3,7 +3,7 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
-import { Expo } from 'expo-server-sdk';
+import { Expo, ExpoPushToken } from 'expo-server-sdk';
 
 // import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
@@ -287,10 +287,9 @@ export class AuthController {
 				.then((userDocument) => {
 					const title = 'Otp submitted successfully.';
 					const body = 'Yeah, you logged in.';
-					const userId = userDocument.userDocument_id;
 					if (userDocument.userDocument?.expoPushToken) {
-						const token = userDocument.userDocument.expoPushToken;
-						sendNotifications(title, body, userId, token)
+						const tokens: Array<ExpoPushToken> = [userDocument.userDocument.expoPushToken];
+						sendNotifications(title, body, tokens)
 							.then((response) => console.log(response))
 							.catch((error) => console.log(error));
 					}

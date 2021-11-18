@@ -6,6 +6,9 @@ import sendNotifications from '../../utils/sendNotifications';
 export const notificationsToSpecificUserType = async (req: Request, res: Response) => {
 	if (req.isAuth) {
 		const { userType, title, messageBody } = req.body;
+
+		if (!title || !messageBody) return res.json({ err: 'Enter both title and body of notification.' });
+
 		let users: Array<any>;
 
 		if (userType === 'user') {
@@ -17,22 +20,16 @@ export const notificationsToSpecificUserType = async (req: Request, res: Respons
 		} else if (userType === 'maintainer') {
 			users = await User.find({ userType: 'Maintainer' });
 		} else {
-			users = await User.find({});
+			return res.json({ err: 'No users selected' });
 		}
 
-		const allExpoTokens: Array<ExpoPushToken> = [];
 		if (users.length) {
-			for (let user = 0; user < users.length; user++) {
-				const { expoPushToken } = users[user];
-				if (expoPushToken) {
-					allExpoTokens.push(expoPushToken);
-				}
-			}
+			const allExpoTokens: Array<ExpoPushToken> = users.reduce((tokens, item) => {
+				if (item.expoPushToken !== undefined) tokens.push(item.expoPushToken);
+				return tokens;
+			}, []);
 
-			const titleForNotification = title ? title : 'This is a random title';
-			const body = messageBody ? messageBody : 'This is a random body.';
-
-			sendNotifications(titleForNotification, body, allExpoTokens)
+			sendNotifications(title, messageBody, allExpoTokens)
 				.then((response) => {
 					return res.json({ response });
 				})

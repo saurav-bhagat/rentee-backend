@@ -1,8 +1,9 @@
-import { Expo, ExpoPushTicket, ExpoPushToken } from 'expo-server-sdk';
+import { Expo, ExpoPushMessage, ExpoPushTicket, ExpoPushToken } from 'expo-server-sdk';
 
 const expo = new Expo();
 const sendNotifications = (title: string, body: string, tokens: Array<ExpoPushToken>) => {
 	return new Promise((resolve, reject) => {
+		console.log(tokens);
 		const notifications: Array<any> = [];
 
 		for (const token of tokens) {
@@ -26,9 +27,8 @@ const sendNotifications = (title: string, body: string, tokens: Array<ExpoPushTo
 		const errorTickets: Array<ExpoPushTicket> = [];
 
 		(async () => {
-			for (let chunk = 0; chunk < chunks.length; chunk++) {
-				const ticket = await expo.sendPushNotificationsAsync(chunks[chunk]);
-
+			for (const chunk of chunks) {
+				const ticket = await expo.sendPushNotificationsAsync(chunk);
 				tickets.push(...ticket);
 			}
 		})()

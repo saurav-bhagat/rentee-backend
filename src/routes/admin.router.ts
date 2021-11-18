@@ -14,6 +14,6 @@ router.post('/login', login);
 
 router.post('/getAllOwner', isAuth, getAllOwner);
 
-router.post('/notifications-to-specific-usertype', isAuth, notificationsToSpecificUserType);
+router.post('/send-notification', isAuth, notificationsToSpecificUserType);
 
 export default router;

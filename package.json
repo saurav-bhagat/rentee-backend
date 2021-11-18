@@ -61,6 +61,7 @@
     "mongoose": "^5.12.5",
     "mongoose-unique-validator": "^2.0.3",
     "nodemailer": "^6.6.0",
+    "path-exists": "^5.0.0",
     "randomstring": "^1.1.5",
     "twilio": "^3.61.0",
     "uuid": "^8.3.2",

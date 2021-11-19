@@ -1,34 +1,63 @@
-import { Expo } from 'expo-server-sdk';
-import { ObjectId } from 'mongoose';
+import { Expo, ExpoPushMessage, ExpoPushTicket, ExpoPushToken } from 'expo-server-sdk';
+
 const expo = new Expo();
-const sendNotifications = (title: string, body: string, userId: ObjectId, token: string) => {
+const sendNotifications = (title: string, body: string, tokens: Array<ExpoPushToken>) => {
 	return new Promise((resolve, reject) => {
+		console.log(tokens);
 		const notifications: Array<any> = [];
 
-		if (!Expo.isExpoPushToken(token)) {
-			return reject(`Push token ${token} is not a valid Expo push token`);
+		for (const token of tokens) {
+			if (!Expo.isExpoPushToken(token)) {
+				console.error(`Push token ${token} is not a valid Expo push token`);
+				continue;
+			}
+
+			notifications.push({
+				to: token,
+				sound: 'default',
+				title: title,
+				body: body,
+				data: { body },
+			});
 		}
 
-		notifications.push({
-			to: token,
-			sound: 'default',
-			title: title,
-			body: body,
-			data: { body },
-		});
-
 		const chunks = expo.chunkPushNotifications(notifications);
-		const chunk = chunks[0];
+
+		const tickets: Array<ExpoPushTicket> = [];
+		const errorTickets: Array<ExpoPushTicket> = [];
+
 		(async () => {
-			const ticket = await expo.sendPushNotificationsAsync(chunk);
-			if (ticket[0].status === 'error') {
-				throw new Error(ticket[0].message);
+			for (const chunk of chunks) {
+				const ticket = await expo.sendPushNotificationsAsync(chunk);
+				tickets.push(...ticket);
 			}
 		})()
 			.then(() => {
-				return resolve('Notifications Sent');
+				for (const ticket of tickets) {
+					if (ticket.status === 'error') {
+						errorTickets.push(ticket);
+					}
+				}
+
+				// if notification is not sent to even a single user
+				if (tokens.length === errorTickets.length) {
+					throw new Error('Error in sending notifications');
+				}
+
+				// if notification is sent to all the users
+				if (errorTickets.length === 0) {
+					return resolve(`Notfications sent to ${tokens.length - errorTickets.length} devices.`);
+				}
+
+				// if some devices have received the notifications and others donot
+				return resolve({
+					message: `Notfication sent to ${
+						tokens.length - errorTickets.length
+					} devices. Couldn't sent notification to ${errorTickets.length} devices.`,
+					errorTickets,
+				});
 			})
-			.catch((error) => reject(error));
+			.catch((error) => reject({ error, errorTickets }));
 	});
 };
 

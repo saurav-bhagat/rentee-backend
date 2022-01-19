@@ -179,31 +179,19 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const nextMonthDate = setDate(addMonths(new Date(), 1), 5);
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
-				let tenantInfo: any;
+				const tenantInfo = {
+					userId,
+					joinDate,
+					rentDueDate,
+					securityAmount,
+					roomId,
+					buildId,
+					ownerId,
+					rent,
+				};
 
 				if (roomDocument.isMultipleTenant) {
-					tenantInfo = {
-						userId,
-						joinDate,
-						rentDueDate,
-						securityAmount,
-						roomId,
-						buildId,
-						ownerId,
-						rent,
-					};
-
 					roomDocument.rent += parseInt(rent);
-				} else {
-					tenantInfo = {
-						userId,
-						joinDate,
-						rentDueDate,
-						securityAmount,
-						roomId,
-						buildId,
-						ownerId,
-					};
 				}
 
 				const tenantDoc = await Tenant.create(tenantInfo);
@@ -374,10 +362,9 @@ export const findRoom = (room: IRooms) => {
 				rentDueDate,
 				securityAmount,
 				paymentDetails,
+				rent,
 			};
-			if (isMultipleTenant) {
-				tempTenat['rent'] = rent;
-			}
+
 			tenantsArray.push(tempTenat);
 		}
 	}

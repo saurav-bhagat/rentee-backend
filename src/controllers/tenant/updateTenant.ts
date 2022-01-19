@@ -6,6 +6,7 @@ import { verifyObjectId } from '../../utils/errorUtils';
 
 import User from '../../models/user/User';
 import Tenant from '../../models/tenant/tenant';
+import Room from '../../models/property/rooms';
 
 export const updateTenantPassword = async (req: Request, res: Response) => {
 	const { email, password } = req.body;
@@ -36,7 +37,7 @@ export const updateTenantPassword = async (req: Request, res: Response) => {
 };
 
 export const updateTenantInfoUtil = async (userObject: any) => {
-	const { name, email, _id, phoneNumber, securityAmount } = userObject;
+	const { name, email, _id, phoneNumber, securityAmount, rent, oldRent, roomId } = userObject;
 	const userDetailObject: any = {};
 	const tenantUserInfo: any = {};
 
@@ -56,6 +57,9 @@ export const updateTenantInfoUtil = async (userObject: any) => {
 	if (securityAmount) {
 		tenantDetails['securityAmount'] = securityAmount;
 		userDetailObject['securityAmount'] = securityAmount;
+	}
+	if (rent) {
+		tenantDetails['rent'] = rent;
 	}
 	if (!(Object.keys(userDetailObject).length == 0)) {
 		if (!(Object.keys(tenantUserInfo).length == 0)) {
@@ -78,6 +82,11 @@ export const updateTenantInfoUtil = async (userObject: any) => {
 				throw new Error('Invalid user detail');
 			}
 		}
+		const roomDocument = await Room.findOne({ _id: roomId });
+		if (roomDocument) {
+			const newRent = roomDocument.rent - parseInt(oldRent) + parseInt(rent);
+			await Room.updateOne({ _id: roomId }, { rent: newRent });
+		}
 
 		return 'Update sucessfully';
 	} else {
@@ -87,7 +96,7 @@ export const updateTenantInfoUtil = async (userObject: any) => {
 
 export const updateTenantInfo = (req: Request, res: Response) => {
 	if (req.isAuth) {
-		const { _id, name, email, phoneNumber, securityAmount } = req.body;
+		const { _id, name, email, phoneNumber, securityAmount, rent, oldRent, roomId } = req.body;
 		if (!_id || !verifyObjectId([_id])) {
 			return res.status(403).json({ err: 'Invalid user Details' });
 		}
@@ -99,7 +108,7 @@ export const updateTenantInfo = (req: Request, res: Response) => {
 			return res.status(400).json({ err: 'Invalid phoneNumber' });
 		}
 
-		const userObject = { _id, name, email, phoneNumber, securityAmount };
+		const userObject = { _id, name, email, phoneNumber, securityAmount, rent, oldRent, roomId };
 		updateTenantInfoUtil(userObject)
 			.then((responseMsg) => {
 				return res.status(200).json({ msg: responseMsg });

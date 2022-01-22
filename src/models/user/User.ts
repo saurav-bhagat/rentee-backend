@@ -44,6 +44,7 @@ const userSchema = new Schema(
 		expoPushToken: {
 			type: String,
 		},
+		address: { type: String },
 	},
 	{ timestamps: true }
 );

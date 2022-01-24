@@ -305,12 +305,13 @@ export class AuthController {
 	};
 
 	updateUserBasicInfoUtil = async (userObject: any) => {
-		const { name, email, _id, phoneNumber, expoPushToken } = userObject;
+		const { name, email, _id, phoneNumber, expoPushToken, address } = userObject;
 		const data: any = {};
 		if (name) data['name'] = name;
 		if (email) data['email'] = email;
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
 		if (expoPushToken) data['expoPushToken'] = expoPushToken;
+		if (address) data['address'] = address;
 		if (!(Object.keys(data).length == 0)) {
 			const result = await User.findOneAndUpdate({ _id }, data, {
 				new: true,
@@ -328,7 +329,7 @@ export class AuthController {
 
 	updateUserBasicInfo = (req: Request, res: Response) => {
 		if (req.isAuth) {
-			const { _id, name, email, phoneNumber, expoPushToken } = req.body;
+			const { _id, name, email, phoneNumber, expoPushToken, address } = req.body;
 
 			if (!_id || !verifyObjectId([_id])) {
 				return res.status(403).json({ err: 'Invalid user Details' });
@@ -344,11 +345,19 @@ export class AuthController {
 			if (expoPushToken && !Expo.isExpoPushToken(expoPushToken)) {
 				return res.status(400).json({ err: 'Invalid expo token!' });
 			}
-			const userObject = { _id, name, email, phoneNumber, expoPushToken };
+			const userObject = { _id, name, email, phoneNumber, expoPushToken, address };
 			this.updateUserBasicInfoUtil(userObject)
 				.then((data) => {
 					const { _id, name, email, phoneNumber, userType, expoPushToken } = data;
-					const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType, expoPushToken };
+					const updatedUserInfo: BasicUser = {
+						_id,
+						name,
+						email,
+						phoneNumber,
+						userType,
+						expoPushToken,
+						address,
+					};
 					res.status(200).json({ updatedUserInfo });
 				})
 				.catch((err) => {

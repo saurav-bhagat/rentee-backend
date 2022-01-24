@@ -79,8 +79,16 @@ export const getAllOwnerBuildings = async (req: Request, res: Response) => {
 				};
 				return res.status(200).json({ ownerDashboardResult });
 			} else {
-				const { _id, name, email, phoneNumber, userType } = owner;
-				const ownerDashboardResult = { ownerId: _id, email, name, phoneNumber, userType, buildings: [] };
+				const { _id, name, email, phoneNumber, userType, address } = owner;
+				const ownerDashboardResult = {
+					ownerId: _id,
+					email,
+					name,
+					phoneNumber,
+					userType,
+					address,
+					buildings: [],
+				};
 				// TODO:  send userID for the tenants
 				return res.status(200).json({ ownerDashboardResult });
 			}

@@ -10,6 +10,7 @@ export interface IUser extends Document {
 	resetLink: string;
 	refreshToken: string;
 	expoPushToken: string;
+	address: string;
 }
 
 export interface IModel extends Model<IUser> {

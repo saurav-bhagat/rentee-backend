@@ -4,7 +4,8 @@ import mongoose, { ObjectId } from 'mongoose';
 import randomstring from 'randomstring';
 import validator from 'validator';
 
-import { addMonths, setDate } from 'date-fns';
+import { addMonths, setDate, format, getDaysInMonth, compareAsc } from 'date-fns';
+import { v4 as uuid4 } from 'uuid';
 
 import { IUser } from '../../models/user/interface';
 import Property from '../../models/property/property';
@@ -111,7 +112,18 @@ export const findOwner = async (
 // owner add tenant to tenant array
 export const tenantRegistration = async (req: Request, res: Response): Promise<Response<void>> => {
 	if (req.isAuth) {
-		const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId, rent } = req.body;
+		const {
+			name,
+			email,
+			phoneNumber,
+			securityAmount,
+			ownerId,
+			buildId,
+			roomId,
+			rent: tenantRent,
+			joinDate,
+			isTenantDueDateStartWithFirstDayOfMonth,
+		} = req.body;
 
 		const tenantDetails = {
 			name,
@@ -121,6 +133,8 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 			ownerId,
 			buildId,
 			roomId,
+			joinDate,
+			isTenantDueDateStartWithFirstDayOfMonth,
 		};
 
 		if (isEmptyFields(tenantDetails)) {
@@ -166,7 +180,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				}
 
 				if (roomDocument.isMultipleTenant) {
-					if (!rent) {
+					if (!tenantRent) {
 						return res.status(400).json({ err: 'Missing fields' });
 					}
 				}
@@ -175,10 +189,23 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const userDoc = await User.create(userInfo);
 				const userId = userDoc._id;
 
-				const joinDate = new Date();
-				const nextMonthDate = setDate(addMonths(new Date(), 1), 5);
+				// const joinDate = new Date();
+				let nextMonthDate, amount;
+				const noOfDayInMonth = getDaysInMonth(new Date(joinDate));
+				if (isTenantDueDateStartWithFirstDayOfMonth) {
+					const currentDateNo = new Date(joinDate).getDate();
+					const oneDayRent = tenantRent / noOfDayInMonth;
+					amount = oneDayRent * (noOfDayInMonth - currentDateNo);
+					amount = Number(amount.toFixed(2));
+					nextMonthDate = setDate(addMonths(new Date(joinDate), 1), 1);
+				} else {
+					amount = tenantRent;
+					nextMonthDate = addMonths(new Date(joinDate), 1);
+				}
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
+				const currentMonth = format(new Date(joinDate), 'MMMM');
+				const rent = [{ _id: uuid4(), month: currentMonth, amount, isPaid: false }];
 				const tenantInfo = {
 					userId,
 					joinDate,
@@ -188,10 +215,12 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 					buildId,
 					ownerId,
 					rent,
+					lastMonthDate: setDate(new Date(joinDate), noOfDayInMonth),
+					actualTenantRent: tenantRent,
 				};
 
 				if (roomDocument.isMultipleTenant) {
-					roomDocument.rent += parseInt(rent);
+					roomDocument.rent += parseInt(tenantRent);
 				}
 
 				const tenantDoc = await Tenant.create(tenantInfo);
@@ -333,13 +362,46 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 	}
 };
 
+const tenantTempUpdate = async (userId: any, data: any) => {
+	const tenantDocument = await Tenant.findOneAndUpdate({ userId }, data, { new: true });
+	return tenantDocument;
+};
+
 export const findRoom = (room: IRooms) => {
 	const { _id, rent, type, floor, roomNo, tenants, roomSize, isMultipleTenant } = room;
 	const tenantsArray: Array<IDashboardTenant> = [];
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = (tenant as unknown) as ITenant;
+			const {
+				userId,
+				joinDate,
+				rentDueDate,
+				securityAmount,
+				payments,
+				lastMonthDate,
+				actualTenantRent,
+			} = (tenant as unknown) as ITenant;
+			let { rent } = (tenant as unknown) as ITenant;
+			// if currentDate crosses the lastMonthDate then we have to push new ( month rent ) in rent array
+			const isLastMonthDateCrossCurrentDate = compareAsc(new Date(), lastMonthDate);
+			if (isLastMonthDateCrossCurrentDate === 1) {
+				// find tenant push new rent in rent array and also update lastMonthDate for keeping this
+				// thing consistent
+				const month = format(new Date(), 'MMMM');
+				const noOfDayInMonth = getDaysInMonth(new Date());
+				const newLastDateMonth = setDate(new Date(), noOfDayInMonth);
+				const tempRent = [...rent, { month, amount: actualTenantRent, isPaid: false }];
+				const data = {
+					rent: tempRent,
+					lastMonthDate: newLastDateMonth,
+				};
+				const result = tenantTempUpdate(userId, data).then((response) => response?.rent);
+				// Todo : Not working properly
+				result.then((res) => {
+					res ? (rent = res) : rent;
+				});
+			}
 			const tenantRef = (userId as unknown) as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
 			const paymentDetails: Array<IPaymentDetail> = [];
@@ -370,7 +432,8 @@ export const findRoom = (room: IRooms) => {
 	}
 	const roomDetails: IDashboardRoom = {
 		_id,
-		rent,
+		// Due to inconsistent we are not showing it yet!
+		// rent,
 		type,
 		floor,
 		roomNo,

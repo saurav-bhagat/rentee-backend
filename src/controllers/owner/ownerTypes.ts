@@ -53,7 +53,7 @@ export interface IDashboardTenant {
 	rentDueDate: Date;
 	securityAmount: number;
 	paymentDetails?: Array<IPaymentDetail>;
-	rent?: any;
+	rent?: Array<any>;
 }
 
 export interface IDashboardMaintainer {

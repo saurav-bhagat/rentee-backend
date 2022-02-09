@@ -189,7 +189,6 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				const userDoc = await User.create(userInfo);
 				const userId = userDoc._id;
 
-				// const joinDate = new Date();
 				let nextMonthDate, amount;
 				const noOfDayInMonth = getDaysInMonth(new Date(joinDate));
 				if (isTenantDueDateStartWithFirstDayOfMonth) {
@@ -362,46 +361,13 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 	}
 };
 
-const tenantTempUpdate = async (userId: any, data: any) => {
-	const tenantDocument = await Tenant.findOneAndUpdate({ userId }, data, { new: true });
-	return tenantDocument;
-};
-
 export const findRoom = (room: IRooms) => {
 	const { _id, rent, type, floor, roomNo, tenants, roomSize, isMultipleTenant } = room;
 	const tenantsArray: Array<IDashboardTenant> = [];
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const {
-				userId,
-				joinDate,
-				rentDueDate,
-				securityAmount,
-				payments,
-				lastMonthDate,
-				actualTenantRent,
-			} = (tenant as unknown) as ITenant;
-			let { rent } = (tenant as unknown) as ITenant;
-			// if currentDate crosses the lastMonthDate then we have to push new ( month rent ) in rent array
-			const isLastMonthDateCrossCurrentDate = compareAsc(new Date(), lastMonthDate);
-			if (isLastMonthDateCrossCurrentDate === 1) {
-				// find tenant push new rent in rent array and also update lastMonthDate for keeping this
-				// thing consistent
-				const month = format(new Date(), 'MMMM');
-				const noOfDayInMonth = getDaysInMonth(new Date());
-				const newLastDateMonth = setDate(new Date(), noOfDayInMonth);
-				const tempRent = [...rent, { month, amount: actualTenantRent, isPaid: false }];
-				const data = {
-					rent: tempRent,
-					lastMonthDate: newLastDateMonth,
-				};
-				const result = tenantTempUpdate(userId, data).then((response) => response?.rent);
-				// Todo : Not working properly
-				result.then((res) => {
-					res ? (rent = res) : rent;
-				});
-			}
+			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = (tenant as unknown) as ITenant;
 			const tenantRef = (userId as unknown) as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
 			const paymentDetails: Array<IPaymentDetail> = [];

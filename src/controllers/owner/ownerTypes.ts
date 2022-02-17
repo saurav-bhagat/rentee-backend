@@ -36,7 +36,7 @@ export interface IDashboardBuild {
 export interface IDashboardRoom {
 	tenants?: Array<IDashboardTenant>;
 	_id: ObjectId;
-	rent: number;
+	rent?: Array<any>;
 	type: string;
 	floor: string;
 	roomNo: number;
@@ -53,7 +53,7 @@ export interface IDashboardTenant {
 	rentDueDate: Date;
 	securityAmount: number;
 	paymentDetails?: Array<IPaymentDetail>;
-	rent?: number;
+	rent?: Array<any>;
 }
 
 export interface IDashboardMaintainer {

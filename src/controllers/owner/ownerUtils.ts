@@ -204,7 +204,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 				// keep consistent date format
 				const rentDueDate = nextMonthDate.toString();
 				const currentMonth = format(new Date(joinDate), 'MMMM');
-				const rent = [{ _id: uuid4(), month: currentMonth, amount, isPaid: false }];
+				const rent = [{ _id: uuid4(), month: currentMonth, amount, isPaid: false, rentDueDate: nextMonthDate }];
 				const tenantInfo = {
 					userId,
 					joinDate,
@@ -376,8 +376,8 @@ export const findRoom = (room: IRooms) => {
 					const payment = (payments[paymentIndex] as unknown) as IPayment;
 					const { respCode } = payment;
 					if (respCode === '01') {
-						const { txnAmount, txnDate, paymentMode, _id } = payment;
-						paymentDetails.push({ txnAmount, txnDate, paymentMode, _id });
+						const { txnAmount, txnDate, paymentMode, _id, rentMonth } = payment;
+						paymentDetails.push({ txnAmount, txnDate, paymentMode, _id, rentMonth });
 					}
 				}
 			}

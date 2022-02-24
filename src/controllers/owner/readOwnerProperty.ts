@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { IOwner } from '../../models/owner/interface';
 import Property from '../../models/property/property';
 import Tenant from '../../models/tenant/tenant';
-import { compareAsc, format, getDaysInMonth, setDate } from 'date-fns';
+import { addMonths, compareAsc, format, getDaysInMonth, intervalToDuration, setDate } from 'date-fns';
 import { v4 as uuid4 } from 'uuid';
 import User from '../../models/user/User';
 import { verifyObjectId } from '../../utils/errorUtils';
@@ -14,21 +14,43 @@ import { findBuilding } from './ownerUtils';
 const pushNewMonthRentInTenantRentArray = async () => {
 	const tenants = await Tenant.find({});
 	for (let tenant = 0; tenant < tenants.length; tenant++) {
-		const { userId, lastMonthDate, actualTenantRent, rent } = tenants[tenant];
+		const { userId, lastMonthDate, actualTenantRent, rent, rentDueDate } = tenants[tenant];
 		// if currentDate crosses the lastMonthDate then we have to push new ( month rent ) in rent array
 		const isLastMonthDateCrossCurrentDate = compareAsc(new Date(), lastMonthDate);
 		if (isLastMonthDateCrossCurrentDate === 1) {
 			// find tenant push new rent in rent array and also update lastMonthDate for keeping this
 			// thing consistent
-			const month = format(new Date(), 'MMMM');
-			const noOfDayInMonth = getDaysInMonth(new Date());
-			const newLastDateMonth = setDate(new Date(), noOfDayInMonth);
-			const tempRent = [...rent, { _id: uuid4(), month, amount: actualTenantRent, isPaid: false }];
-			const data = {
-				rent: tempRent,
-				lastMonthDate: newLastDateMonth,
-			};
-			await Tenant.findOneAndUpdate({ userId }, data, { new: true });
+
+			// calulate duration between two dates
+			const duration: any = intervalToDuration({ start: new Date(rentDueDate), end: new Date() });
+
+			if (duration) {
+				let monthsDiff: any;
+
+				monthsDiff = duration.years * 12 + duration.months + 1;
+
+				const tempRentArray = [...rent];
+				let tempRentDueDate = rentDueDate;
+				while (monthsDiff--) {
+					const month = format(new Date(tempRentDueDate), 'MMMM');
+					tempRentArray.push({
+						_id: uuid4(),
+						month,
+						amount: actualTenantRent,
+						isPaid: false,
+						rentDueDate: addMonths(tempRentDueDate, 1),
+					});
+					tempRentDueDate = addMonths(tempRentDueDate, 1);
+				}
+				// const noOfDayInMonth = getDaysInMonth(new Date(tempRentDueDate));
+				// const newLastDateMonth = setDate(new Date(tempRentDueDate), noOfDayInMonth);
+				const data = {
+					rentDueDate: tempRentDueDate,
+					rent: tempRentArray,
+					lastMonthDate: tempRentDueDate,
+				};
+				await Tenant.findOneAndUpdate({ userId }, data, { new: true });
+			}
 		}
 	}
 };

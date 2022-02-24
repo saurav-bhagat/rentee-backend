@@ -14,6 +14,7 @@ export interface IPayment extends Document {
 	status: string;
 	bankTxnId: string;
 	txnDate: Date;
+	rentMonth: string;
 }
 
 export interface IPaymentDetail {
@@ -21,4 +22,5 @@ export interface IPaymentDetail {
 	txnAmount: string;
 	txnDate: Date;
 	paymentMode: string;
+	rentMonth: string;
 }

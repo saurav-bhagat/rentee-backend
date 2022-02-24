@@ -26,6 +26,7 @@ export const payWithCashAndOtherMeans = async (req: Request, res: Response) => {
 			status: 'Success',
 			txnDate: new Date(),
 			paymentMode: 'Cash',
+			rentMonth: month,
 		};
 		try {
 			const paymentDocument = await Payment.create(paymentDetails);
@@ -40,7 +41,7 @@ export const payWithCashAndOtherMeans = async (req: Request, res: Response) => {
 						{
 							$push: { payments: paymentDocument._id, receipts: receipt._id },
 							$set: data,
-							rentDueDate: addMonths(new Date(rentDueDate), 1),
+							// rentDueDate: addMonths(new Date(rentDueDate), 1),
 						}
 					);
 					if (!tenantDocument) {

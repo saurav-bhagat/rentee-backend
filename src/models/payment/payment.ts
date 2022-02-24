@@ -15,6 +15,7 @@ const paymentSchema = new Schema(
 		status: String,
 		bankTxnId: String,
 		txnDate: Date,
+		rentMonth: String,
 	},
 	{ timestamps: true }
 );

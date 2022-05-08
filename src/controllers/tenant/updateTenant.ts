@@ -82,11 +82,6 @@ export const updateTenantInfoUtil = async (userObject: any) => {
 				throw new Error('Invalid user detail');
 			}
 		}
-		const roomDocument = await Room.findOne({ _id: roomId });
-		if (roomDocument) {
-			const newRent = roomDocument.rent - parseInt(oldRent) + parseInt(rent);
-			await Room.updateOne({ _id: roomId }, { rent: newRent });
-		}
 
 		return 'Update sucessfully';
 	} else {

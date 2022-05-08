@@ -127,16 +127,13 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 
 		const tenantDetails = {
 			name,
-			email,
 			phoneNumber,
-			securityAmount,
 			ownerId,
 			buildId,
 			roomId,
 			joinDate,
 			isTenantDueDateStartWithFirstDayOfMonth,
 		};
-
 		if (isEmptyFields(tenantDetails)) {
 			return res.status(400).json({ err: 'Missing fields' });
 		}
@@ -144,8 +141,8 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 		if (!verifyObjectId([ownerId, buildId, roomId])) {
 			return res.status(400).json({ err: 'Incorrect details sent' });
 		}
-		if (!validator.isEmail(email) || !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-			return res.status(400).json({ err: 'Either email/phoneNumber invalid' });
+		if (!validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+			return res.status(400).json({ err: 'Invalid phone number' });
 		}
 		// Finding building with ownerId and roomId
 		// this is to ensure that ownerID is associated with buildId
@@ -209,7 +206,7 @@ export const tenantRegistration = async (req: Request, res: Response): Promise<R
 					userId,
 					joinDate,
 					rentDueDate,
-					securityAmount,
+					securityAmount: securityAmount || 0,
 					roomId,
 					buildId,
 					ownerId,

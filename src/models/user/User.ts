@@ -15,10 +15,10 @@ const userSchema = new Schema(
 		email: {
 			type: String,
 			// required: [true, 'Please enter an email'],
-			unique: [true, 'Email is already registered'],
+			// unique: [true, 'Email is already registered'],
 			lowercase: true,
-			validate: [validator.isEmail, 'Please enter an valid email'],
-			sparse: true, // https://stackoverflow.com/questions/24430220/e11000-duplicate-key-error-index-in-mongodb-mongoose
+			// validate: [validator.isEmail, 'Please enter an valid email'],
+			// sparse: true, // https://stackoverflow.com/questions/24430220/e11000-duplicate-key-error-index-in-mongodb-mongoose
 		},
 		password: {
 			type: String,

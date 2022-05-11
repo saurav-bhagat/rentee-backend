@@ -1,30 +1,42 @@
 import { Request, Response } from 'express';
+import mongoose, { ObjectId } from 'mongoose';
+
+import randomstring from 'randomstring';
+import validator from 'validator';
+
+import { addMonths, setDate, format, getDaysInMonth, compareAsc } from 'date-fns';
+import { v4 as uuid4 } from 'uuid';
 
 import { IUser } from '../../models/user/interface';
 import Property from '../../models/property/property';
+
 import Maintainer from '../../models/maintainer/maintainer';
-import mongoose, { ObjectId } from 'mongoose';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../../utils/errorUtils';
+
 import {
 	BasicUser,
-	OwnerDashoardDetail,
+	OwnerDashboardDetail,
 	IDashboardRoom,
 	IDashboardTenant,
-	IDashbhoardBuild,
-	IDashoboardMaintainer,
+	IDashboardBuild,
+	IDashboardMaintainer,
 } from './ownerTypes';
-import randomstring from 'randomstring';
+
 import User from '../../models/user/User';
-import validator from 'validator';
 import Tenant from '../../models/tenant/tenant';
+
 import Rooms from '../../models/property/rooms';
 import { IMaintainer } from '../../models/maintainer/interface';
+
 import { IBuilding, IRooms, IProperty } from '../../models/property/interface';
 import { ITenant } from '../../models/tenant/interface';
 
+import { IOwner } from '../../models/owner/interface';
+import { IPayment, IPaymentDetail } from '../../models/payment/interface';
+
 export const findOwner = async (
 	userDocument: IUser
-): Promise<IProperty | null | IUser | BasicUser | OwnerDashoardDetail> => {
+): Promise<IProperty | null | IUser | BasicUser | OwnerDashboardDetail> => {
 	const propertyDetails = await Property.findOne({ ownerId: userDocument._id })
 		.populate({
 			path: 'buildings.rooms',
@@ -40,109 +52,190 @@ export const findOwner = async (
 			populate: {
 				path: 'userId',
 			},
+		})
+		.populate({
+			path: 'ownerInfo',
 		});
 	if (propertyDetails == null) {
 		// throw new Error('Property details not added by owner yet');
 		// TODO: return user details even if property is not added
-		const { _id, name, email, phoneNumber, userType } = userDocument;
-		const userInfo: BasicUser = { _id, name, email, phoneNumber, userType };
+		const { _id, name, email, phoneNumber, userType, address } = userDocument;
+		const userInfo: BasicUser = { ownerId: _id, name, email, phoneNumber, userType, address };
 
 		return userInfo;
 	}
-	const { _id, ownerId, buildings } = propertyDetails;
-	const tempbuildingArray: Array<IDashbhoardBuild> = [];
+
+	const { userType } = userDocument;
+	const { _id, ownerId, buildings, ownerInfo } = propertyDetails;
+
+	const tempbuildingArray: Array<IDashboardBuild> = [];
 	for (let i = 0; i < buildings.length; i++) {
-		const tempBuild: IDashbhoardBuild = findBuilding(buildings[i]);
+		const tempBuild: IDashboardBuild = findBuilding(buildings[i]);
 		tempbuildingArray.push(tempBuild);
 	}
-	const ownerDashbhoardResult: OwnerDashoardDetail = { _id, ownerId, buildings: tempbuildingArray };
+
+	let ownerDashbhoardResult: OwnerDashboardDetail = {};
+	if (ownerInfo) {
+		const {
+			accountName,
+			accountNumber,
+			ifsc,
+			bankName,
+			beneficiaryName,
+			vendorId,
+		} = (ownerInfo as unknown) as IOwner;
+
+		ownerDashbhoardResult = {
+			_id,
+			ownerId,
+			userType,
+			buildings: tempbuildingArray,
+			accountName,
+			accountNumber,
+			ifsc,
+			bankName,
+			beneficiaryName,
+			vendorId,
+		};
+		return ownerDashbhoardResult;
+	}
+
+	ownerDashbhoardResult = {
+		_id,
+		ownerId,
+		userType,
+		buildings: tempbuildingArray,
+	};
 	return ownerDashbhoardResult;
 };
 
 // owner add tenant to tenant array
 export const tenantRegistration = async (req: Request, res: Response): Promise<Response<void>> => {
-	const { name, email, phoneNumber, securityAmount, ownerId, buildId, roomId } = req.body;
+	if (req.isAuth) {
+		const {
+			name,
+			email,
+			phoneNumber,
+			securityAmount,
+			ownerId,
+			buildId,
+			roomId,
+			rent: tenantRent,
+			joinDate,
+			isTenantDueDateStartWithFirstDayOfMonth,
+		} = req.body;
 
-	const tenantDetails = {
-		name,
-		email,
-		phoneNumber,
-		securityAmount,
-		ownerId,
-		buildId,
-		roomId,
-	};
-
-	if (isEmptyFields(tenantDetails)) {
-		return res.status(400).json({ err: 'Missing fields' });
-	}
-
-	if (!verifyObjectId([ownerId, buildId, roomId])) {
-		return res.status(400).json({ err: 'Incorrect details sent' });
-	}
-	if (!validator.isEmail(email) || !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-		return res.status(400).json({ err: 'Either email/phoneNumber invalid' });
-	}
-	// Finding building with ownerId and roomId
-	// this is to ensure that ownerID is associated with buildId
-	const building = await Property.aggregate([
-		{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
-		{ $unwind: '$buildings' },
-		{ $match: { 'buildings._id': new mongoose.Types.ObjectId(buildId) } },
-	]);
-
-	// Make sure owner has building
-	if (building.length == 0) {
-		return res.status(400).json({ err: 'Invalid owner/building' });
-	}
-
-	const password = randomstring.generate({ length: 6, charset: 'abc' });
-
-	const userInfo = {
-		name,
-		email,
-		password,
-		phoneNumber,
-		userType: 'Tenant',
-	};
-
-	try {
-		// Make sure owner has room in building
-		const roomDocument = await Rooms.findOne({ _id: roomId });
-
-		if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
-			// Creating a tenant User
-			const userDoc = await User.create(userInfo);
-			const userId = userDoc._id;
-
-			const joinDate = new Date();
-			const nextMonthDate = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-			// keep consistent date format
-			const rentDueDate = nextMonthDate.toString();
-
-			const tenantInfo = {
-				userId,
-				joinDate,
-				rentDueDate,
-				securityAmount,
-				roomId,
-				buildId,
-				ownerId,
-			};
-
-			const tenantDoc = await Tenant.create(tenantInfo);
-			const tenantId = tenantDoc._id;
-
-			roomDocument.tenants.push(tenantId);
-			await roomDocument.save();
-			return res.status(200).json({ password, msg: 'Tenant added successfully' });
-		} else {
-			return res.status(400).json({ err: 'Room not found!' });
+		const tenantDetails = {
+			name,
+			phoneNumber,
+			ownerId,
+			buildId,
+			roomId,
+			joinDate,
+			isTenantDueDateStartWithFirstDayOfMonth,
+		};
+		if (isEmptyFields(tenantDetails)) {
+			return res.status(400).json({ err: 'Missing fields' });
 		}
-	} catch (error) {
-		// TODO: If tenant is not saved, delete the user
-		// this case can be invoked by passing security: 20,000
-		return res.status(400).json({ err: formatDbError(error) });
+
+		if (!verifyObjectId([ownerId, buildId, roomId])) {
+			return res.status(400).json({ err: 'Incorrect details sent' });
+		}
+		if (!validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+			return res.status(400).json({ err: 'Invalid phone number' });
+		}
+		// Finding building with ownerId and roomId
+		// this is to ensure that ownerID is associated with buildId
+		const building = await Property.aggregate([
+			{ $match: { ownerId: new mongoose.Types.ObjectId(ownerId) } },
+			{ $unwind: '$buildings' },
+			{ $match: { 'buildings._id': new mongoose.Types.ObjectId(buildId) } },
+		]);
+
+		// Make sure owner has building
+		if (building.length == 0) {
+			return res.status(400).json({ err: 'Invalid owner/building' });
+		}
+
+		const password = randomstring.generate({ length: 6, charset: 'abc' });
+
+		const userInfo = {
+			name,
+			email,
+			password,
+			phoneNumber,
+			userType: 'Tenant',
+		};
+
+		try {
+			// Make sure owner has room in building
+			const roomDocument = await Rooms.findOne({ _id: roomId });
+
+			if (roomDocument && roomDocument._id.toString() == roomId.toString()) {
+				if (!roomDocument.isMultipleTenant && roomDocument.tenants.length >= 1) {
+					return res.status(400).json({ err: 'You cant add tenant in single room' });
+				}
+
+				if (roomDocument.isMultipleTenant) {
+					if (!tenantRent) {
+						return res.status(400).json({ err: 'Missing fields' });
+					}
+				}
+
+				// Creating a tenant User
+				const userDoc = await User.create(userInfo);
+				const userId = userDoc._id;
+
+				let nextMonthDate, amount;
+				const noOfDayInMonth = getDaysInMonth(new Date(joinDate));
+				if (isTenantDueDateStartWithFirstDayOfMonth) {
+					const currentDateNo = new Date(joinDate).getDate();
+					const oneDayRent = tenantRent / noOfDayInMonth;
+					amount = oneDayRent * (noOfDayInMonth - currentDateNo);
+					amount = Number(amount.toFixed(2));
+					nextMonthDate = setDate(addMonths(new Date(joinDate), 1), 1);
+				} else {
+					amount = tenantRent;
+					nextMonthDate = addMonths(new Date(joinDate), 1);
+				}
+				// keep consistent date format
+				const rentDueDate = nextMonthDate.toString();
+				const currentMonth = format(new Date(joinDate), 'MMMM');
+				const rent = [{ _id: uuid4(), month: currentMonth, amount, isPaid: false, rentDueDate: nextMonthDate }];
+				const tenantInfo = {
+					userId,
+					joinDate,
+					rentDueDate,
+					securityAmount: securityAmount || 0,
+					roomId,
+					buildId,
+					ownerId,
+					rent,
+					lastMonthDate: setDate(new Date(joinDate), noOfDayInMonth),
+					actualTenantRent: tenantRent,
+				};
+
+				if (roomDocument.isMultipleTenant) {
+					roomDocument.rent += parseInt(tenantRent);
+				}
+
+				const tenantDoc = await Tenant.create(tenantInfo);
+				const tenantId = tenantDoc._id;
+
+				roomDocument.tenants.push(tenantId);
+
+				await roomDocument.save();
+				return res.status(200).json({ password, msg: 'Tenant added successfully' });
+			} else {
+				return res.status(400).json({ err: 'Room not found!' });
+			}
+		} catch (error) {
+			// TODO: If tenant is not saved, delete the user
+			// this case can be invoked by passing security: 20,000
+			return res.status(400).json({ err: formatDbError(error) });
+		}
+	} else {
+		return res.status(403).json({ err: 'Not Authorized' });
 	}
 };
 
@@ -266,14 +359,25 @@ export const addMaintainerUtil = async (addMaintainerDetails: any) => {
 };
 
 export const findRoom = (room: IRooms) => {
-	const { _id, rent, type, floor, roomNo, tenants } = room;
+	const { _id, rent, type, floor, roomNo, tenants, roomSize, isMultipleTenant } = room;
 	const tenantsArray: Array<IDashboardTenant> = [];
 	if (tenants && tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenant = tenants[k];
-			const { userId, joinDate, rentDueDate, securityAmount } = (tenant as unknown) as ITenant;
+			const { userId, joinDate, rentDueDate, securityAmount, payments, rent } = (tenant as unknown) as ITenant;
 			const tenantRef = (userId as unknown) as IUser;
 			const { _id, name, email, phoneNumber } = tenantRef;
+			const paymentDetails: Array<IPaymentDetail> = [];
+			if (payments && payments.length) {
+				for (let paymentIndex = 0; paymentIndex < payments.length; paymentIndex++) {
+					const payment = (payments[paymentIndex] as unknown) as IPayment;
+					const { respCode } = payment;
+					if (respCode === '01') {
+						const { txnAmount, txnDate, paymentMode, _id, rentMonth } = payment;
+						paymentDetails.push({ txnAmount, txnDate, paymentMode, _id, rentMonth });
+					}
+				}
+			}
 			const tempTenat: IDashboardTenant = {
 				_id,
 				name,
@@ -282,11 +386,24 @@ export const findRoom = (room: IRooms) => {
 				joinDate,
 				rentDueDate,
 				securityAmount,
+				paymentDetails,
+				rent,
 			};
+
 			tenantsArray.push(tempTenat);
 		}
 	}
-	const roomDetails: IDashboardRoom = { _id, rent, type, floor, roomNo, tenants: tenantsArray };
+	const roomDetails: IDashboardRoom = {
+		_id,
+		// Due to inconsistent we are not showing it yet!
+		// rent,
+		type,
+		floor,
+		roomNo,
+		roomSize,
+		tenants: tenantsArray,
+		isMultipleTenant,
+	};
 	return roomDetails;
 };
 
@@ -294,21 +411,21 @@ export const findMaintainer = (maintainer: IMaintainer) => {
 	const { joinDate, userId } = maintainer;
 	const maintainerUser = (userId as unknown) as IUser;
 	const { _id, name, email, phoneNumber } = maintainerUser;
-	const maintainerDetail: IDashoboardMaintainer = { _id, name, email, phoneNumber, joinDate };
+	const maintainerDetail: IDashboardMaintainer = { _id, name, email, phoneNumber, joinDate };
 	return maintainerDetail;
 };
 
 export const findBuilding = (building: IBuilding) => {
 	const { _id, name, address } = building;
 	const build = building;
-	let buildingDetail: IDashbhoardBuild;
+	let buildingDetail: IDashboardBuild;
 	const rooms: Array<IDashboardRoom> = [];
 	for (let j = 0; j < build.rooms.length; j++) {
 		const room: IDashboardRoom = findRoom((building.rooms[j] as unknown) as IRooms);
 		rooms.push(room);
 	}
 	if (building.maintainerId) {
-		const maintainerDetail: IDashoboardMaintainer = findMaintainer(
+		const maintainerDetail: IDashboardMaintainer = findMaintainer(
 			(building.maintainerId as unknown) as IMaintainer
 		);
 		buildingDetail = { _id, name, address, rooms, maintainer: maintainerDetail };
@@ -316,4 +433,14 @@ export const findBuilding = (building: IBuilding) => {
 	}
 	buildingDetail = { _id, name, address, rooms };
 	return buildingDetail;
+};
+
+export const validateIfsc = (ifsc: any) => {
+	const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/;
+	return regex.test(ifsc);
+};
+
+export const validateBankAccountNumber = (accountNumber: any) => {
+	const regex = /[0-9]{9,18}/;
+	return regex.test(accountNumber);
 };

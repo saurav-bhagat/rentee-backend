@@ -1,59 +1,34 @@
 import { Request, Response } from 'express';
+import randomstring from 'randomstring';
+
+import validator from 'validator';
+import { ObjectId } from 'mongoose';
+
 import Room from '../../models/property/rooms';
 
 import Property from '../../models/property/property';
 import User from '../../models/user/User';
 
 import Maintainer from '../../models/maintainer/maintainer';
-import { formatDbError, isEmptyFields, verifyObjectId } from '../../utils/errorUtils';
-
-import randomstring from 'randomstring';
-import bcrypt from 'bcrypt';
-
-import validator from 'validator';
-import { ObjectId } from 'mongoose';
-import { BasicUser } from './ownerTypes';
+import { formatDbError, verifyObjectId } from '../../utils/errorUtils';
 
 // owner add properties after signup
 export const addOwnerProperty = async (req: Request, res: Response) => {
 	if (req.isAuth) {
-		const { ownerId, buildingsObj, name, email, password } = req.body;
-		const userData = { name, email, password };
+		// buildingObj type can found in ( ./ownerTypes ) file from IBuildingObjectOwnerProperty.buildings interface
+		const { ownerId, buildingsObj } = req.body;
+
 		if (!ownerId || !verifyObjectId([ownerId])) {
 			return res.status(400).json({ err: 'Incorrect owner detail' });
 		}
 
-		if (isEmptyFields(userData)) {
-			return res.status(400).json({ err: 'Either name/email/password is missing' });
-		}
-
-		if (!validator.isEmail(email) || password.length < 6) {
-			return res.status(400).json({ err: 'Either email/password is not valid' });
-		}
-
-		// Updating Onwer basic info
 		try {
-			const salt = await bcrypt.genSalt();
-			const hashedPassword = await bcrypt.hash(password, salt);
-
-			const ownerBasicInfo = await User.findByIdAndUpdate(
-				{ _id: ownerId },
-				{
-					name,
-					email,
-					password: hashedPassword,
-				},
-				{
-					new: true,
-					runValidators: true,
-					context: 'query',
-				}
-			);
-			if (!ownerBasicInfo) return res.status(400).json({ err: 'Invalid owner detail' });
-
 			if (buildingsObj !== undefined && buildingsObj.length !== 0) {
 				// Create property for owner
-				const property = new Property({ ownerId });
+				let property = await Property.findOne({ ownerId });
+				if (property == null) {
+					property = new Property({ ownerId });
+				}
 
 				for (let i = 0; i < buildingsObj.length; i += 1) {
 					const tempRooms: Array<ObjectId> = [];
@@ -73,7 +48,7 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					if (building.maintainerDetail && Object.keys(building.maintainerDetail).length !== 0) {
 						let maintainerInfo = building.maintainerDetail;
 
-						const { email: maintainerEmail, phoneNumber: maintainerPhone } = maintainerInfo;
+						const { name: maintainerName, phoneNumber: maintainerPhone } = maintainerInfo;
 
 						if (maintainerPhone && !validator.isMobilePhone(maintainerPhone)) {
 							return res.status(400).json({ err: `Invalid maintainer phone number ${maintainerPhone}` });
@@ -92,8 +67,8 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 							});
 						} else {
 							// create new maintainer
-							if (email && !validator.isEmail(email)) {
-								return res.status(400).json({ err: `Invalid maintainer email ${maintainerEmail}` });
+							if (!maintainerName) {
+								return res.status(400).json({ err: `Invalid maintainer name ${maintainerName}` });
 							}
 							const maintainerPassword = randomstring.generate({ length: 6, charset: 'abc' });
 							const userType = 'Maintainer';
@@ -119,23 +94,34 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 				}
 				const properties = await property.save();
 
-				const builidingForMaintainer = properties.buildings;
+				// maintainer model getting updated with maintainer-specific details
 
-				for (let i = 0; i < builidingForMaintainer.length; i++) {
-					const builiding = builidingForMaintainer[i];
-					if (builiding.maintainerId) {
-						const maintainerIdInBuilding = builiding.maintainerId;
+				const buildingForMaintainer = properties.buildings;
+
+				for (let i = 0; i < buildingForMaintainer.length; i++) {
+					const building = buildingForMaintainer[i];
+					if (building.maintainerId) {
+						const maintainerIdInBuilding = building.maintainerId;
 
 						// maintainer model getting updated with maintainer-specific details if present.
 						const isMaintainer = await Maintainer.findOneAndUpdate(
 							{ userId: maintainerIdInBuilding },
-							{ $push: { buildings: builiding._id } }
+							{ $push: { buildings: building._id } }
 						);
+						const isBuildingPresentInBuildingArray = await Maintainer.findOne({
+							buildings: [building._id],
+						});
 
+						if (!isBuildingPresentInBuildingArray) {
+							await Maintainer.findOneAndUpdate(
+								{ _id: maintainerIdInBuilding },
+								{ $push: { buildings: building._id } }
+							);
+						}
 						// maintainer model getting saved for the first time with maintainer-specific details.
-						if (!isMaintainer) {
+						if (!isMaintainer && !isBuildingPresentInBuildingArray) {
 							const buildingIdArray: Array<ObjectId> = [];
-							buildingIdArray.push(builiding._id);
+							buildingIdArray.push(building._id);
 							const doc = {
 								ownerId,
 								userId: maintainerIdInBuilding,
@@ -162,13 +148,8 @@ export const addOwnerProperty = async (req: Request, res: Response) => {
 					}
 					const result = await propertydoc.save();
 
-					return res.status(200).json({ propertyDetails: result });
+					return res.status(200).json({ msg: 'Building details added successfully!' });
 				}
-			}
-			if (ownerBasicInfo) {
-				const { _id, name, email, phoneNumber, userType } = ownerBasicInfo;
-				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
-				return res.status(200).json({ updatedUserInfo });
 			}
 		} catch (error) {
 			return res.status(400).json({ err: formatDbError(error) });

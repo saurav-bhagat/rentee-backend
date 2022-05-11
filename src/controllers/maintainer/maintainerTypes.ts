@@ -18,10 +18,10 @@ export interface IRoomObject {
 	roomType?: string;
 	floor?: string;
 	roomNo?: number;
-	tenants?: Array<ITenanatObject>;
+	tenants?: Array<ITenantObject>;
 }
 
-export interface ITenanatObject {
+export interface ITenantObject {
 	tenantName?: string;
 	tenantEmail?: string;
 	tenantPhoneNumber?: string;

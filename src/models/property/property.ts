@@ -5,8 +5,9 @@ import { buildingSchema } from './subSchema';
 
 const propertySchema = new Schema(
 	{
-		ownerId: { type: Schema.Types.ObjectId, ref: 'user', unique: true },
+		ownerId: { type: Schema.Types.ObjectId, ref: 'user', unique: true, sparse: true },
 		buildings: [buildingSchema],
+		ownerInfo: { type: Schema.Types.ObjectId, ref: 'Owner', unique: true, sparse: true },
 	},
 	{ timestamps: true }
 );

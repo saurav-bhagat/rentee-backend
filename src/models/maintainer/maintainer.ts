@@ -5,7 +5,7 @@ const maintainerSchema = new Schema(
 	{
 		ownerId: { type: Schema.Types.ObjectId, ref: 'user' },
 		userId: { type: Schema.Types.ObjectId, ref: 'user' },
-		joinDate: String,
+		joinDate: Date,
 		buildings: [{ type: Schema.Types.ObjectId }],
 	},
 	{ timestamps: true }

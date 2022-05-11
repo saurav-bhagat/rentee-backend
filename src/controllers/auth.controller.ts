@@ -3,6 +3,7 @@ import getJwtToken, { verifyRefreshToken } from '../utils/token';
 
 import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
+import { Expo, ExpoPushToken } from 'expo-server-sdk';
 
 // import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
@@ -21,7 +22,8 @@ import { IMaintainer } from '../models/maintainer/interface';
 
 import { findMaintainer } from '../controllers/maintainer';
 import { findOwner } from '../controllers/owner';
-import { BasicUser, OwnerDashoardDetail } from './owner/ownerTypes';
+import { BasicUser, OwnerDashboardDetail } from './owner/ownerTypes';
+import sendNotifications from '../utils/sendNotifications';
 
 export class AuthController {
 	// Not using this functionality for now
@@ -90,17 +92,20 @@ export class AuthController {
 			// verifyrefresh token method verify token and give us the payload inside it
 			const userData = await verifyRefreshToken(refreshToken, <string>process.env.JWT_REFRESH_SECRET);
 
-			await User.findUserForRefreshToken(userData._id, refreshToken);
+			const userDocument = await User.findUserForRefreshToken(userData._id, refreshToken);
 
-			const { user, accessToken, refreshToken: newRefreshToken } = await this.generateTokensForUser(userData);
-			const { _id, phoneNumber, userType, name } = user;
-			const userDetails = { _id, phoneNumber, userType, name };
-			return res.status(200).json({
+			const userDetails = await this.findDashboardForUser(userDocument);
+			const { accessToken, refreshToken: refreshToken1 } = await this.generateTokensForUser(userDocument);
+
+			const result = {
 				userDetails,
-				accessToken: accessToken,
-				refreshToken: newRefreshToken,
-			});
-		} catch (error) {
+				accessToken,
+				refreshToken: refreshToken1,
+				firstLogin: false,
+			};
+
+			return res.status(200).json({ userDocument: result });
+		} catch (error: any) {
 			console.log('error is: ', error);
 			return res.status(403).json({ err: error.message });
 		}
@@ -129,7 +134,7 @@ export class AuthController {
                         <p><a href="${process.env.CLIENT_URL}/resetpassword/${token}">Rest Password Link</a></p>
                     `,
 				};
-				if (nodeMailer.sendMail(mailData))
+				if (await nodeMailer.sendMail(mailData))
 					return res.status(200).json({ msg: 'Please check your registered Email ID', token, updatedUser });
 			} else {
 				return res.status(400).json({ err: 'Email Does not exist' });
@@ -182,6 +187,7 @@ export class AuthController {
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
 		// console.log('receiving phone number for opt', req, res);
+		res.json({ msg: 'req receive successfully' });
 		// For development purposes we need to comment the below function
 		// sendOTP(req, res);
 	};
@@ -204,7 +210,7 @@ export class AuthController {
 
 	findDashboardForUser = async (
 		userDocument: IUser
-	): Promise<ITenant | IProperty | IMaintainer | OwnerDashoardDetail | null | IUser | BasicUser> => {
+	): Promise<ITenant | IProperty | IMaintainer | OwnerDashboardDetail | null | IUser | BasicUser> => {
 		if (userDocument.userType == 'Owner') {
 			const ownerDetails = await findOwner(userDocument);
 			return ownerDetails;
@@ -234,11 +240,11 @@ export class AuthController {
 		// our generateTokensForUser is no longer able to genrate a token
 		// because it expect a doc structure like User.create method create
 		const { accessToken, refreshToken, user: registeredUser } = await this.generateTokensForUser(user.ops[0]);
-		const { _id, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
-		const ownerBasicDetails = { _id, userType, ownerPhoneNumber };
+		const { _id: ownerId, userType, phoneNumber: ownerPhoneNumber } = registeredUser;
+		const userDetails = { ownerId, userType, phoneNumber: ownerPhoneNumber };
 		return new Promise((resolve) => {
 			resolve({
-				ownerBasicDetails,
+				userDetails,
 				accessToken,
 				refreshToken,
 				firstLogin: true,
@@ -247,7 +253,6 @@ export class AuthController {
 	};
 
 	findUser = async (phoneNumber: string, code: string) => {
-		console.log(code);
 		// for production it comment
 		// await verifyPhoneOtp(phoneNumber,code);
 		const userDocument = await User.findOne({ phoneNumber });
@@ -260,9 +265,11 @@ export class AuthController {
 		const { accessToken, refreshToken } = await this.generateTokensForUser(userDocument);
 		return new Promise((resolve) => {
 			resolve({
+				userDocument,
 				userDetails,
 				accessToken,
 				refreshToken,
+				firstLogin: false,
 			});
 		});
 	};
@@ -278,6 +285,14 @@ export class AuthController {
 		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {
+					const title = 'Otp submitted successfully.';
+					const body = 'Yeah, you logged in.';
+					if (userDocument.userDocument?.expoPushToken) {
+						const tokens: Array<ExpoPushToken> = [userDocument.userDocument.expoPushToken];
+						sendNotifications(title, body, tokens)
+							.then((response) => console.log(response))
+							.catch((error) => console.log(error));
+					}
 					return res.status(200).json({ userDocument });
 				})
 				.catch((err) => {
@@ -290,11 +305,13 @@ export class AuthController {
 	};
 
 	updateUserBasicInfoUtil = async (userObject: any) => {
-		const { name, email, _id, phoneNumber } = userObject;
+		const { name, email, _id, phoneNumber, expoPushToken, address } = userObject;
 		const data: any = {};
 		if (name) data['name'] = name;
 		if (email) data['email'] = email;
 		if (phoneNumber) data['phoneNumber'] = phoneNumber;
+		if (expoPushToken) data['expoPushToken'] = expoPushToken;
+		if (address) data['address'] = address;
 		if (!(Object.keys(data).length == 0)) {
 			const result = await User.findOneAndUpdate({ _id }, data, {
 				new: true,
@@ -310,29 +327,44 @@ export class AuthController {
 		}
 	};
 
-	// TODO: check for isAuth
 	updateUserBasicInfo = (req: Request, res: Response) => {
-		const { _id, name, email, phoneNumber } = req.body;
+		if (req.isAuth) {
+			const { _id, name, email, phoneNumber, expoPushToken, address } = req.body;
 
-		if (!_id || !verifyObjectId([_id])) {
-			res.status(403).json({ err: 'Invalid user Details' });
-		}
+			if (!_id || !verifyObjectId([_id])) {
+				return res.status(403).json({ err: 'Invalid user Details' });
+			}
 
-		if (email && !validator.isEmail(email)) {
-			res.status(400).json({ err: 'email is not valid!' });
+			if (email && !validator.isEmail(email)) {
+				return res.status(400).json({ err: 'email is not valid!' });
+			}
+			if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
+				return res.status(400).json({ err: 'Phone number is not valid!' });
+			}
+
+			if (expoPushToken && !Expo.isExpoPushToken(expoPushToken)) {
+				return res.status(400).json({ err: 'Invalid expo token!' });
+			}
+			const userObject = { _id, name, email, phoneNumber, expoPushToken, address };
+			this.updateUserBasicInfoUtil(userObject)
+				.then((data) => {
+					const { _id, name, email, phoneNumber, userType, expoPushToken } = data;
+					const updatedUserInfo: BasicUser = {
+						_id,
+						name,
+						email,
+						phoneNumber,
+						userType,
+						expoPushToken,
+						address,
+					};
+					res.status(200).json({ updatedUserInfo });
+				})
+				.catch((err) => {
+					res.status(400).json({ err: err.message });
+				});
+		} else {
+			return res.status(403).json({ err: 'Not Authorized' });
 		}
-		if (phoneNumber && !validator.isMobilePhone(`91${phoneNumber}`, 'en-IN')) {
-			res.status(400).json({ err: 'Phone number is not valid!' });
-		}
-		const userObject = { _id, name, email, phoneNumber };
-		this.updateUserBasicInfoUtil(userObject)
-			.then((data) => {
-				const { _id, name, email, phoneNumber, userType } = data;
-				const updatedUserInfo: BasicUser = { _id, name, email, phoneNumber, userType };
-				res.status(200).json({ updatedUserInfo });
-			})
-			.catch((err) => {
-				res.status(400).json({ err: err.message });
-			});
 	};
 }

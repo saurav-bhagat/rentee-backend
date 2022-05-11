@@ -8,16 +8,16 @@ import { ITenant } from '../../models/tenant/interface';
 import { IBuilding, IRooms } from '../../models/property/interface';
 
 import { ObjectId } from 'mongoose';
-import { ITenanatObject, IRoomObject, IBuildingObject, IMaintainerObject } from './maintainerTypes';
+import { ITenantObject, IRoomObject, IBuildingObject, IMaintainerObject } from './maintainerTypes';
 
 export const getTenantInfo = (room: IRooms) => {
 	const tenants = (room.tenants as unknown) as Array<ITenant>;
-	const tenantInfoArray: Array<ITenanatObject> = [];
+	const tenantInfoArray: Array<ITenantObject> = [];
 
 	if (tenants.length) {
 		for (let k = 0; k < tenants.length; k++) {
 			const tenantAsUser = (tenants[k].userId as unknown) as IUser;
-			let tenantInfo: ITenanatObject = {};
+			let tenantInfo: ITenantObject = {};
 
 			const { name: tenantName, email: tenantEmail, phoneNumber: tenantPhoneNumber } = tenantAsUser;
 
@@ -92,9 +92,10 @@ export const findMaintainer = async (userDocument: IUser): Promise<any> => {
 
 	if (property && maintainerDoc) {
 		let builds: Array<IBuilding> = [];
-		builds = property.buildings.filter(
-			(building) => building.maintainerId.toString() === userDocument._id.toString()
+		builds = property.buildings.filter((building) =>
+			building.maintainerId ? building.maintainerId.toString() === maintainerDoc._id.toString() : null
 		);
+
 		const ownerDetails = (maintainerDoc.ownerId as unknown) as IUser;
 
 		const { name: ownerName, email: ownerEmail, phoneNumber: ownerPhoneNumber } = ownerDetails;
@@ -120,10 +121,11 @@ export const findMaintainer = async (userDocument: IUser): Promise<any> => {
 	} else {
 		throw new Error('Property doc not found!');
 	}
-
+	const userType = userDocument.userType;
 	return new Promise((resolve) => {
 		resolve({
 			maintainerResObj,
+			userType,
 		});
 	});
 };

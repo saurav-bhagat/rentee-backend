@@ -5,10 +5,18 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import express from 'express';
 import db from './config/db';
 import routes from './routes';
+import cors from 'cors';
 
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+
+// View is used for payment integration as web view
+// View engine setup
+// app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
 
 // db setup
 db();

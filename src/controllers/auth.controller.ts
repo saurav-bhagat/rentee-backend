@@ -5,7 +5,7 @@ import User from '../models/user/User';
 import { IUser } from '../models/user/interface';
 import { Expo, ExpoPushToken } from 'expo-server-sdk';
 
-// import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
+import { sendOTP, verifyPhoneOtp } from '../utils/phoneNumberVerification';
 import { formatDbError, isEmptyFields, verifyObjectId } from '../utils/errorUtils';
 
 import NodeMailer from '../config/nodemailer';
@@ -187,9 +187,9 @@ export class AuthController {
 
 	sendOtpOnLogin = (req: Request, res: Response): void => {
 		// console.log('receiving phone number for opt', req, res);
-		res.json({ msg: 'req receive successfully' });
+		// res.json({ msg: 'req receive successfully' });
 		// For development purposes we need to comment the below function
-		// sendOTP(req, res);
+		sendOTP(req, res);
 	};
 
 	// if correct userDocument arrives then no promise rejection occurs so
@@ -254,7 +254,7 @@ export class AuthController {
 
 	findUser = async (phoneNumber: string, code: string) => {
 		// for production it comment
-		// await verifyPhoneOtp(phoneNumber,code);
+		await verifyPhoneOtp(phoneNumber, code);
 		const userDocument = await User.findOne({ phoneNumber });
 		if (userDocument == null) {
 			const user = await this.registerUser(phoneNumber);
@@ -281,7 +281,7 @@ export class AuthController {
 			phoneNumber.length === 10 &&
 			validator.isMobilePhone(`+91${phoneNumber}`, 'en-IN') &&
 			code &&
-			code.length === 6
+			code.length === 4
 		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {

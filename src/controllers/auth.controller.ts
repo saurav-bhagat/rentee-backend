@@ -281,7 +281,7 @@ export class AuthController {
 			phoneNumber.length === 10 &&
 			validator.isMobilePhone(`+91${phoneNumber}`, 'en-IN') &&
 			code &&
-			code.length === 6
+			code.length === 4
 		) {
 			this.findUser(phoneNumber, code)
 				.then((userDocument) => {

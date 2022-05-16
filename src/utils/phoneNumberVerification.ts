@@ -25,7 +25,7 @@ export const sendOTP = async (req: Request, res: Response) => {
 export const verifyOTP = (req: Request, res: Response) => {
 	const { phoneNumber, code } = req.body;
 	if (phoneNumber.length === 10) {
-		if (code.length === 6) {
+		if (code.length === 4) {
 			client.verify
 				.services(process.env.TWILIO_SERVICE_SID as string)
 				.verificationChecks.create({

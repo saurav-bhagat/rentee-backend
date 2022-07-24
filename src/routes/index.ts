@@ -12,7 +12,7 @@ const router: Router = Router();
 
 router.use('/owner', isAuth, ownerRouter);
 router.use('/tenant', isAuth, tenantRouter);
-router.use('/auth', isAuth, authRouter);
+router.use('/auth', authRouter);
 router.use('/payment', paytmRouter);
 router.use('/receipt', isAuth, receiptRouter);
 router.use('/admin', admin);

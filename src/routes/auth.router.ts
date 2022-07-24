@@ -17,7 +17,7 @@ router.put('/forgot-password', authController.forgotPassword);
 
 router.post('/reset-password', authController.resetPassword);
 
-router.put('/update-basic-info', authController.updateUserBasicInfo);
+router.put('/update-basic-info', isAuth, authController.updateUserBasicInfo);
 
 router.get('/protected', isAuth, (req: any, res: any) => {
 	console.log(req.user);
